@@ -15,19 +15,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const SUCCESS_DURATION_MS = 4000;
 
-type EmailFormValues = { name: string; email: string };
-type EmailFormErrors = Partial<Record<keyof EmailFormValues, string>>;
-
-function validateEmailField<K extends keyof EmailFormValues>(
-  field: K,
-  value: string,
-): string | undefined {
+function validateEmail(value: string): string | undefined {
   const trimmed = value.trim();
-
-  if (field === "name") {
-    return trimmed === "" ? "Your name is required" : undefined;
-  }
-
   if (trimmed === "") return "Email is required";
   if (!EMAIL_PATTERN.test(trimmed)) return "Enter a valid email address";
   return undefined;
@@ -101,10 +90,9 @@ function ModalShell({
 }
 
 /**
- * Name and email — the deck request's whole ask.
- *
- * The name is here because the confirmation email the Apps Script sends
- * opens on "Hi {name}"; an address alone would have to greet a stranger.
+ * Email capture — the deck request's whole ask. One field on purpose: the
+ * deck only has to reach an inbox, so the confirmation email greets a
+ * generic "Hi there".
  *
  * A valid submission is posted to the "Company Deck" tab of the submissions
  * sheet (`lib/formSubmission.ts`) and only then switches to the success
@@ -119,9 +107,8 @@ function EmailRequestForm({
   titleId: string;
   onClose: () => void;
 }) {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [errors, setErrors] = useState<EmailFormErrors>({});
+  const [error, setError] = useState<string | undefined>(undefined);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [submitError, setSubmitError] = useState<string | undefined>(undefined);
@@ -142,41 +129,27 @@ function EmailRequestForm({
     };
   }, []);
 
-  function handleChange(
-    field: keyof EmailFormValues,
-    value: string,
-    setter: (value: string) => void,
-  ) {
-    setter(value);
-    // Only re-check live once a submit has already failed — flagging a field
-    // as invalid while it is still being typed is just noise.
-    if (hasSubmitted) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: validateEmailField(field, value),
-      }));
-    }
+  function handleChange(value: string) {
+    setEmail(value);
+    // Only re-check live once a submit has already failed — flagging an
+    // address as invalid while it is still being typed is just noise.
+    if (hasSubmitted) setError(validateEmail(value));
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextErrors: EmailFormErrors = {
-      name: validateEmailField("name", name),
-      email: validateEmailField("email", email),
-    };
-
-    setErrors(nextErrors);
+    const nextError = validateEmail(email);
+    setError(nextError);
     setHasSubmitted(true);
     setSubmitError(undefined);
 
-    if (Object.values(nextErrors).some(Boolean)) return;
+    if (nextError) return;
 
     setIsSending(true);
 
     try {
       await submitToSheet(request.sheet, {
-        [SHEET_HEADERS.name]: name.trim(),
         [SHEET_HEADERS.email]: email.trim(),
         [SHEET_HEADERS.request]: request.label,
       });
@@ -240,41 +213,18 @@ function EmailRequestForm({
         <div>
           <input
             ref={inputRef}
-            type="text"
-            name="name"
-            autoComplete="name"
-            placeholder="/ Your name *"
-            aria-invalid={Boolean(errors.name)}
-            value={name}
-            disabled={isSending}
-            onChange={(event) =>
-              handleChange("name", event.target.value, setName)
-            }
-            className={emailPanelFieldClassName(Boolean(errors.name))}
-          />
-          {errors.name && (
-            <p className="mt-[0.43em] text-micro text-red-500">{errors.name}</p>
-          )}
-        </div>
-
-        <div>
-          <input
             type="email"
             name="email"
             autoComplete="email"
             placeholder="/ Email *"
-            aria-invalid={Boolean(errors.email)}
+            aria-invalid={Boolean(error)}
             value={email}
             disabled={isSending}
-            onChange={(event) =>
-              handleChange("email", event.target.value, setEmail)
-            }
-            className={emailPanelFieldClassName(Boolean(errors.email))}
+            onChange={(event) => handleChange(event.target.value)}
+            className={emailPanelFieldClassName(Boolean(error))}
           />
-          {errors.email && (
-            <p className="mt-[0.43em] text-micro text-red-500">
-              {errors.email}
-            </p>
+          {error && (
+            <p className="mt-[0.43em] text-micro text-red-500">{error}</p>
           )}
         </div>
 

@@ -100,7 +100,7 @@ export const requestCtas: Record<"deck" | "caseStudy", RequestCta> = {
     id: "company-deck",
     label: "Request Company Deck",
     description:
-      "Tell us who you are and we'll send the studio deck straight to your inbox.",
+      "Drop your email and we'll send the studio deck straight to your inbox.",
     variant: "email",
     sheet: "Company Deck",
   },

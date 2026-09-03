@@ -22,10 +22,13 @@ posted field of the same name (`headers.map(h => data[h])`), so a header typo
 writes an empty cell rather than an error. Spelling and order below; the order
 is free to change, the spelling is not.
 
-**`Company Deck`** — row 1, columns A–E:
+**`Company Deck`** — row 1, columns A–D:
 
-| Timestamp | Name | Email | Request | Status |
-| --------- | ---- | ----- | ------- | ------ |
+| Timestamp | Email | Request | Status |
+| --------- | ----- | ------- | ------ |
+
+That form asks for an email and nothing else, so its confirmation email opens
+on "Hi there" rather than a name.
 
 **`Callback Request`** — row 1, columns A–H:
 
@@ -93,7 +96,6 @@ sheet as append-only public input.
   ```sh
   curl -L -X POST '<exec-url>' \
     --data-urlencode 'targetSheet=Company Deck' \
-    --data-urlencode 'Name=Test Person' \
     --data-urlencode 'Email=you@example.com' \
     --data-urlencode 'Request=Request Company Deck'
   ```

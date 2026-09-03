@@ -206,6 +206,9 @@ function sendEmailNotification(rowData, headers, data) {
 /**
  * The two visitor-facing emails. Which one is sent follows the target sheet,
  * so a new request type is a new `case` here and nothing else.
+ *
+ * `name` is empty for a deck request — that form asks for an email and
+ * nothing else — so the greeting falls back to "Hi there".
  */
 function getUserEmailConfig(targetSheet, name) {
   const greeting = `Hi ${name || "there"},`;
