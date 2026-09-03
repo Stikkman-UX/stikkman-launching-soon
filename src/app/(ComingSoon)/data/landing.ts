@@ -87,6 +87,12 @@ export type RequestCta = {
   /** Shown under the modal's title, so each request reads as its own ask. */
   description: string;
   variant: RequestVariant;
+  /**
+   * Tab this request is appended to in the submissions spreadsheet, and the
+   * value the Apps Script switches on to pick both emails. Must match the tab
+   * name character for character — see `google-apps-script/README.md`.
+   */
+  sheet: string;
 };
 
 export const requestCtas: Record<"deck" | "caseStudy", RequestCta> = {
@@ -94,8 +100,9 @@ export const requestCtas: Record<"deck" | "caseStudy", RequestCta> = {
     id: "company-deck",
     label: "Request Company Deck",
     description:
-      "Drop your email and we'll send the studio deck straight to your inbox.",
+      "Tell us who you are and we'll send the studio deck straight to your inbox.",
     variant: "email",
+    sheet: "Company Deck",
   },
   caseStudy: {
     id: "request-a-callback",
@@ -103,6 +110,7 @@ export const requestCtas: Record<"deck" | "caseStudy", RequestCta> = {
     description:
       "Tell us what you're working on and we'll take it from there — a founder or design lead will call you back.",
     variant: "contact",
+    sheet: "Callback Request",
   },
 };
 

@@ -18,7 +18,10 @@ import { useEffect, useRef } from "react";
  */
 export function useEscapeKey(handler: () => void) {
   const handlerRef = useRef(handler);
-  handlerRef.current = handler;
+
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

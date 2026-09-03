@@ -5,6 +5,8 @@ import HighlightMark from "@/app/shared/HighlightMark";
 import SuccessCheckIcon from "@/app/shared/SuccessCheckIcon";
 import { ButtonBlue } from "@/app/shared/Button";
 import { useEscapeKey } from "@/lib/useEscapeKey";
+import { SHEET_HEADERS, submitToSheet } from "@/lib/formSubmission";
+import { contactEmail } from "@/app/(ComingSoon)/data/landing";
 
 /**
  * The main site's public Contact page form (`contact/components/
@@ -21,9 +23,11 @@ import { useEscapeKey } from "@/lib/useEscapeKey";
  * rather than shrinking into a large display. See the `@theme` note in
  * globals.css for why this app has no fixed scale.
  *
- * Like the page it comes from, nothing is posted anywhere yet — a valid
- * submission spends `LOADING_DURATION_MS` in its loading state and then flips
- * to the success panel.
+ * Where the main site's copy still fakes its submit on a timer, a valid
+ * submission here is posted to the Google Sheet (see `lib/formSubmission.ts`)
+ * and only flips to the success panel once the script confirms the row — a
+ * failure keeps every field intact and says so, rather than thanking someone
+ * for a brief that never arrived.
  */
 
 const CATEGORIES = [
@@ -45,7 +49,6 @@ const SERVICES = [
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+()\-\s]{10,15}$/;
-const LOADING_DURATION_MS = 1200;
 
 type FormValues = {
   name: string;
@@ -107,11 +110,13 @@ export default function ContactRequestForm({
   titleId,
   title,
   description,
+  targetSheet,
   onClose,
 }: {
   titleId: string;
   title: string;
   description: string;
+  targetSheet: string;
   onClose: () => void;
 }) {
   const [category, setCategory] = useState<Category>("New project");
@@ -124,10 +129,10 @@ export default function ContactRequestForm({
   const [errors, setErrors] = useState<FormErrors>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
+  const [submitError, setSubmitError] = useState<string | undefined>(undefined);
 
   const servicesRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
-  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Escape belongs to the innermost thing that is open: the services list
   // first, the modal only once it is closed. This panel owns the key for the
@@ -158,12 +163,6 @@ export default function ContactRequestForm({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [isServicesOpen]);
 
-  useEffect(() => {
-    return () => {
-      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-    };
-  }, []);
-
   function handleFieldChange<K extends "name" | "email" | "phone" | "message">(
     field: K,
     value: string,
@@ -189,7 +188,7 @@ export default function ContactRequestForm({
     }
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextErrors: FormErrors = {
@@ -202,15 +201,35 @@ export default function ContactRequestForm({
 
     setErrors(nextErrors);
     setHasSubmitted(true);
+    setSubmitError(undefined);
 
     const hasErrors = Object.values(nextErrors).some(Boolean);
     if (hasErrors) return;
 
     setIsServicesOpen(false);
     setStatus("loading");
-    loadingTimeoutRef.current = setTimeout(() => {
+
+    try {
+      await submitToSheet(targetSheet, {
+        // Keys are the sheet's column headers — see `lib/formSubmission.ts`.
+        [SHEET_HEADERS.category]: category,
+        [SHEET_HEADERS.name]: name.trim(),
+        [SHEET_HEADERS.email]: email.trim(),
+        [SHEET_HEADERS.phone]: phone.trim(),
+        // One cell, one service per comma — the sheet stays readable and the
+        // notification email doesn't need to know this was a multiselect.
+        [SHEET_HEADERS.services]: selectedServices.join(", "),
+        [SHEET_HEADERS.message]: message.trim(),
+      });
+
       setStatus("success");
-    }, LOADING_DURATION_MS);
+    } catch (error) {
+      console.error("[request] submission failed", error);
+      setStatus("idle");
+      setSubmitError(
+        `Something went wrong sending that. Please try again, or email us at ${contactEmail}.`,
+      );
+    }
   }
 
   const servicesTriggerLabel = isServicesOpen
@@ -452,6 +471,12 @@ export default function ContactRequestForm({
             We reply within two working days.
           </p>
         </div>
+
+        {submitError && (
+          <p role="alert" className="text-micro text-red-500">
+            {submitError}
+          </p>
+        )}
       </form>
     </div>
   );

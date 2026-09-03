@@ -6,19 +6,38 @@ import SuccessCheckIcon from "@/app/shared/SuccessCheckIcon";
 import { ButtonBlue } from "@/app/shared/Button";
 import ContactRequestForm from "@/app/(ComingSoon)/components/ContactRequestForm";
 import { useEscapeKey } from "@/lib/useEscapeKey";
-import type { RequestCta } from "@/app/(ComingSoon)/data/landing";
+import { SHEET_HEADERS, submitToSheet } from "@/lib/formSubmission";
+import { contactEmail, type RequestCta } from "@/app/(ComingSoon)/data/landing";
 
 // The same pattern the main site's contact forms validate against, kept
 // identical so an address accepted here is accepted there too.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const SUCCESS_DURATION_MS = 2500;
+const SUCCESS_DURATION_MS = 4000;
 
-function validateEmail(value: string): string | undefined {
+type EmailFormValues = { name: string; email: string };
+type EmailFormErrors = Partial<Record<keyof EmailFormValues, string>>;
+
+function validateEmailField<K extends keyof EmailFormValues>(
+  field: K,
+  value: string,
+): string | undefined {
   const trimmed = value.trim();
+
+  if (field === "name") {
+    return trimmed === "" ? "Your name is required" : undefined;
+  }
+
   if (trimmed === "") return "Email is required";
   if (!EMAIL_PATTERN.test(trimmed)) return "Enter a valid email address";
   return undefined;
+}
+
+/** Same field treatment as the contact panel's, minus its error helper. */
+function emailPanelFieldClassName(hasError: boolean) {
+  return `w-full rounded-lg border bg-[#0000000A] px-[1.15em] py-[1em] text-body text-[#392B56] outline-none transition-colors placeholder-[#00000066] focus:bg-[#EFEDE9] disabled:cursor-not-allowed disabled:opacity-50 ${
+    hasError ? "border-red-500" : "border-transparent"
+  }`;
 }
 
 /**
@@ -82,11 +101,14 @@ function ModalShell({
 }
 
 /**
- * Email capture — the deck request's whole ask.
+ * Name and email — the deck request's whole ask.
  *
- * Nothing is sent anywhere yet — a valid submission is logged to the console
- * and the panel switches to its success state. Wiring this to a real endpoint
- * is the one deliberate gap.
+ * The name is here because the confirmation email the Apps Script sends
+ * opens on "Hi {name}"; an address alone would have to greet a stranger.
+ *
+ * A valid submission is posted to the "Company Deck" tab of the submissions
+ * sheet (`lib/formSubmission.ts`) and only then switches to the success
+ * state, which closes itself after `SUCCESS_DURATION_MS`.
  */
 function EmailRequestForm({
   request,
@@ -97,9 +119,12 @@ function EmailRequestForm({
   titleId: string;
   onClose: () => void;
 }) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | undefined>(undefined);
+  const [errors, setErrors] = useState<EmailFormErrors>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [submitError, setSubmitError] = useState<string | undefined>(undefined);
   const [isSent, setIsSent] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -117,29 +142,55 @@ function EmailRequestForm({
     };
   }, []);
 
-  function handleChange(value: string) {
-    setEmail(value);
-    // Only re-check live once a submit has already failed — flagging an
-    // address as invalid while it is still being typed is just noise.
-    if (hasSubmitted) setError(validateEmail(value));
+  function handleChange(
+    field: keyof EmailFormValues,
+    value: string,
+    setter: (value: string) => void,
+  ) {
+    setter(value);
+    // Only re-check live once a submit has already failed — flagging a field
+    // as invalid while it is still being typed is just noise.
+    if (hasSubmitted) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: validateEmailField(field, value),
+      }));
+    }
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextError = validateEmail(email);
-    setError(nextError);
+    const nextErrors: EmailFormErrors = {
+      name: validateEmailField("name", name),
+      email: validateEmailField("email", email),
+    };
+
+    setErrors(nextErrors);
     setHasSubmitted(true);
-    if (nextError) return;
+    setSubmitError(undefined);
 
-    console.log("[request]", {
-      type: request.id,
-      label: request.label,
-      email: email.trim(),
-    });
+    if (Object.values(nextErrors).some(Boolean)) return;
 
-    setIsSent(true);
-    closeTimeoutRef.current = setTimeout(onClose, SUCCESS_DURATION_MS);
+    setIsSending(true);
+
+    try {
+      await submitToSheet(request.sheet, {
+        [SHEET_HEADERS.name]: name.trim(),
+        [SHEET_HEADERS.email]: email.trim(),
+        [SHEET_HEADERS.request]: request.label,
+      });
+
+      setIsSent(true);
+      closeTimeoutRef.current = setTimeout(onClose, SUCCESS_DURATION_MS);
+    } catch (error) {
+      console.error("[request] submission failed", error);
+      setSubmitError(
+        `Something went wrong sending that. Please try again, or email us at ${contactEmail}.`,
+      );
+    } finally {
+      setIsSending(false);
+    }
   }
 
   if (isSent) {
@@ -154,7 +205,8 @@ function EmailRequestForm({
             Thanks — you&apos;re on the list.
           </p>
           <p className="max-w-[26em] text-body text-[#8A8781]">
-            We&apos;ll send it across to {email.trim()} shortly.
+            We&apos;ve sent a confirmation to {email.trim()}; the deck follows
+            shortly.
           </p>
         </div>
       </div>
@@ -176,27 +228,68 @@ function EmailRequestForm({
         {request.description}
       </p>
 
-      <form className="mt-fluid-md" onSubmit={handleSubmit} noValidate>
-        {/* `em` padding so the field grows with its own type rather than
-            becoming a thin strip inside a scaled-up panel. At the 14px
-            floor these are the main site's `px-4 py-3.5`. */}
-        <input
-          ref={inputRef}
-          type="email"
-          name="email"
-          autoComplete="email"
-          placeholder="/ Email *"
-          aria-invalid={Boolean(error)}
-          value={email}
-          onChange={(event) => handleChange(event.target.value)}
-          className={`w-full rounded-lg border bg-[#0000000A] px-[1.15em] py-[1em] text-body text-[#392B56] outline-none transition-colors placeholder-[#00000066] focus:bg-[#EFEDE9] ${
-            error ? "border-red-500" : "border-transparent"
-          }`}
+      {/* `text-body` is what every `em` below resolves against, so the fields
+          scale with their own type rather than becoming thin strips inside a
+          scaled-up panel. At the 14px floor the padding is the main site's
+          `px-4 py-3.5`. */}
+      <form
+        className="mt-fluid-md flex flex-col gap-[1.14em] text-body"
+        onSubmit={handleSubmit}
+        noValidate
+      >
+        <div>
+          <input
+            ref={inputRef}
+            type="text"
+            name="name"
+            autoComplete="name"
+            placeholder="/ Your name *"
+            aria-invalid={Boolean(errors.name)}
+            value={name}
+            disabled={isSending}
+            onChange={(event) =>
+              handleChange("name", event.target.value, setName)
+            }
+            className={emailPanelFieldClassName(Boolean(errors.name))}
+          />
+          {errors.name && (
+            <p className="mt-[0.43em] text-micro text-red-500">{errors.name}</p>
+          )}
+        </div>
+
+        <div>
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            placeholder="/ Email *"
+            aria-invalid={Boolean(errors.email)}
+            value={email}
+            disabled={isSending}
+            onChange={(event) =>
+              handleChange("email", event.target.value, setEmail)
+            }
+            className={emailPanelFieldClassName(Boolean(errors.email))}
+          />
+          {errors.email && (
+            <p className="mt-[0.43em] text-micro text-red-500">
+              {errors.email}
+            </p>
+          )}
+        </div>
+
+        <ButtonBlue
+          text="Send it over"
+          type="submit"
+          className="mt-fluid-2xs"
+          loading={isSending}
         />
 
-        {error && <p className="mt-fluid-2xs text-micro text-red-500">{error}</p>}
-
-        <ButtonBlue text="Send it over" type="submit" className="mt-fluid-xs" />
+        {submitError && (
+          <p role="alert" className="text-micro text-red-500">
+            {submitError}
+          </p>
+        )}
       </form>
     </>
   );
@@ -236,6 +329,7 @@ function RequestModalPanel({
           titleId={titleId}
           title={request.label}
           description={request.description}
+          targetSheet={request.sheet}
           onClose={onClose}
         />
       ) : (
