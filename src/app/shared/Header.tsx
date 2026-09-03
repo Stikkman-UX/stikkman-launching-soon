@@ -171,7 +171,7 @@ export default function Header() {
       >
         <a
           href={`mailto:${contactEmail}`}
-          className="font-mono text-micro tracking-[0.153em] text-white/70 uppercase transition-colors duration-200 hover:text-white"
+          className="font-mono text-micro tracking-[0.153em] text-white/70 lowercase transition-colors duration-200 hover:text-white"
         >
           {contactEmail}
         </a>

@@ -106,9 +106,9 @@ export const requestCtas: Record<"deck" | "caseStudy", RequestCta> = {
   },
   caseStudy: {
     id: "request-a-callback",
-    label: "Request a callback",
+    label: "Start A Conversation",
     description:
-      "Tell us what you're working on and we'll take it from there — a founder or design lead will call you back.",
+      "Tell us what you're working on and we'll take it from there — a founder or a design lead will call you back.",
     variant: "contact",
     sheet: "Callback Request",
   },
