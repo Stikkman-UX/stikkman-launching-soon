@@ -211,9 +211,15 @@ export default function LandingContent() {
             ref={(el) => {
               tailRefs.current[0] = el;
             }}
-            className="mt-10 flex flex-wrap items-center opacity-0"
+            className="mt-fluid-md flex flex-wrap items-center opacity-0"
           >
-            <span className="text-base text-[#392B56E5]">
+            {/* Fluid like everything else in this column, or the label holds
+                16px while the heading above it grows with the viewport and
+                the line all but vanishes on a large display. The numbers are
+                the ones it already had at 1440px: `mt-fluid-md` is that
+                `mt-10` (40px), and 1.11vw is that `text-base` (16px), with a
+                14px floor so it stays legible at the 360px viewport floor. */}
+            <span className="text-[max(14px,1.11vw)] text-[#392B56E5]">
               New Website Launching Soon
             </span>
           </div>
