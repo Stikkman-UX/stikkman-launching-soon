@@ -34,9 +34,15 @@ export default function ComingSoonSection() {
           bottom lands at `100% - (9.72 - 7.64)vw`, i.e. 2.08vw short of the
           section bottom; that gap has to stay hidden behind the header bar,
           which is 3.75vw. Both being vw is what keeps 2.08 < 3.75 true at
-          every size rather than only at 1440px. */}
+          every size rather than only at 1440px.
+
+          Below `lg` none of that framing applies: the box is the plain
+          viewport and the crop is centred on the bottom edge, so the subject
+          stands on the foot of the screen with the headline stacked above it
+          rather than being pushed off to one side. One class covers both the
+          phone and the md tablet range. */}
       <video
-        className="absolute inset-y-0 right-0 h-full w-full object-cover object-left md:object-top-right lg:top-[-9.72vw] lg:right-[-20.83vw] lg:h-[calc(100%+7.64vw)] lg:object-right"
+        className="absolute inset-y-0 right-0 h-full w-full object-cover object-bottom lg:top-[-9.72vw] lg:right-[-20.83vw] lg:h-[calc(100%+7.64vw)] lg:object-right"
         src="/landing/bg-video.mp4"
         autoPlay
         muted
