@@ -11,13 +11,17 @@ import { contactEmail } from "@/app/(ComingSoon)/data/landing";
 /**
  * The main site's public Contact page form (`contact/components/
  * ContactPageForm.tsx`), rendered inside the "Request a callback" modal:
- * the same category picker, the same field set (name, email, phone, services
- * multiselect, message), the same validate-on-submit-then-live-revalidate
- * behaviour, the same copy, the same success state.
+ * the same field set (name, email, phone, services multiselect, message),
+ * the same validate-on-submit-then-live-revalidate behaviour, the same copy,
+ * the same success state.
  *
- * The one deliberate difference is sizing. Every length here is an `em`
- * against the panel's fluid `text-body`, exactly as `RequestModal`'s email
- * field already was, instead of the main site's fixed `px-4 py-3.5`/`gap-4`
+ * The first deliberate difference is the category. The main site offers a
+ * picker; this panel takes new-project briefs only, so it states the category
+ * as copy instead of asking, and submits that one value silently.
+ *
+ * The second is sizing. Every length here is an `em` against the panel's
+ * fluid `text-body`, exactly as `RequestModal`'s email field already was,
+ * instead of the main site's fixed `px-4 py-3.5`/`gap-4`
  * — at 14px (this app's floor, and the main site's `text-sm`) they resolve to
  * the same pixels, and above it the form scales with the rest of the page
  * rather than shrinking into a large display. See the `@theme` note in
@@ -30,13 +34,11 @@ import { contactEmail } from "@/app/(ComingSoon)/data/landing";
  * for a brief that never arrived.
  */
 
-const CATEGORIES = [
-  "New project",
-  "Partnership",
-  "Careers",
-  "Something else",
-] as const;
-type Category = (typeof CATEGORIES)[number];
+// Not a choice any more: the "Partnership" / "Careers" / "Something else"
+// options are off the UI and this panel only takes new-project briefs. The
+// value is still submitted so the sheet's category column keeps the shape
+// every existing row already has.
+const CATEGORY = "New project";
 
 const SERVICES = [
   "strategic user research",
@@ -119,7 +121,6 @@ export default function ContactRequestForm({
   targetSheet: string;
   onClose: () => void;
 }) {
-  const [category, setCategory] = useState<Category>("New project");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -212,7 +213,7 @@ export default function ContactRequestForm({
     try {
       await submitToSheet(targetSheet, {
         // Keys are the sheet's column headers — see `lib/formSubmission.ts`.
-        [SHEET_HEADERS.category]: category,
+        [SHEET_HEADERS.category]: CATEGORY,
         [SHEET_HEADERS.name]: name.trim(),
         [SHEET_HEADERS.email]: email.trim(),
         [SHEET_HEADERS.phone]: phone.trim(),
@@ -272,38 +273,19 @@ export default function ContactRequestForm({
 
       <p className="mt-fluid-xs text-body text-[#8A8781]">{description}</p>
 
-      <div className="mt-fluid-md">
-        <HighlightMark text="I'm here about" className="text-neutral-400" />
-
-        <div className="mt-fluid-xs flex flex-wrap gap-x-[max(24px,1.67vw)] gap-y-fluid-2xs">
-          {CATEGORIES.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setCategory(item)}
-              className={`relative cursor-pointer pb-fluid-2xs text-body transition-colors ${
-                category === item
-                  ? "text-[#392B56]"
-                  : "text-[#8A8781] hover:text-[#392B56]"
-              }`}
-            >
-              {item}
-              {category === item && (
-                <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#6D5B95]" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      <HighlightMark
+        text="I'm here about a New Project"
+        className="mt-fluid-md text-neutral-400"
+      />
 
       {/* `text-body` on the form itself is what every `em` below resolves
           against, so the whole control set scales as one. */}
       <form
-        className="mt-fluid-md flex flex-col gap-[1.14em] text-body"
+        className="mt-fluid-xs flex flex-col gap-[1.14em] text-body"
         onSubmit={handleSubmit}
         noValidate
       >
-        <input type="hidden" name="category" value={category} />
+        <input type="hidden" name="category" value={CATEGORY} />
 
         <div className="grid grid-cols-1 gap-[1.14em] sm:grid-cols-2">
           <div>
