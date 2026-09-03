@@ -1,0 +1,458 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import HighlightMark from "@/app/shared/HighlightMark";
+import SuccessCheckIcon from "@/app/shared/SuccessCheckIcon";
+import { ButtonBlue } from "@/app/shared/Button";
+import { useEscapeKey } from "@/lib/useEscapeKey";
+
+/**
+ * The main site's public Contact page form (`contact/components/
+ * ContactPageForm.tsx`), rendered inside the "Request a callback" modal:
+ * the same category picker, the same field set (name, email, phone, services
+ * multiselect, message), the same validate-on-submit-then-live-revalidate
+ * behaviour, the same copy, the same success state.
+ *
+ * The one deliberate difference is sizing. Every length here is an `em`
+ * against the panel's fluid `text-body`, exactly as `RequestModal`'s email
+ * field already was, instead of the main site's fixed `px-4 py-3.5`/`gap-4`
+ * — at 14px (this app's floor, and the main site's `text-sm`) they resolve to
+ * the same pixels, and above it the form scales with the rest of the page
+ * rather than shrinking into a large display. See the `@theme` note in
+ * globals.css for why this app has no fixed scale.
+ *
+ * Like the page it comes from, nothing is posted anywhere yet — a valid
+ * submission spends `LOADING_DURATION_MS` in its loading state and then flips
+ * to the success panel.
+ */
+
+const CATEGORIES = [
+  "New project",
+  "Partnership",
+  "Careers",
+  "Something else",
+] as const;
+type Category = (typeof CATEGORIES)[number];
+
+const SERVICES = [
+  "strategic user research",
+  "experience design",
+  "ai transformation",
+  "product experience transformation planning",
+  "web experience design & development",
+  "mvp product development",
+];
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[0-9+()\-\s]{10,15}$/;
+const LOADING_DURATION_MS = 1200;
+
+type FormValues = {
+  name: string;
+  email: string;
+  phone: string;
+  services: string[];
+  message: string;
+};
+
+type FormErrors = Partial<Record<keyof FormValues, string>>;
+
+type Status = "idle" | "loading" | "success";
+
+function validateField<K extends keyof FormValues>(
+  field: K,
+  value: FormValues[K],
+): string | undefined {
+  switch (field) {
+    case "name":
+      return (value as string).trim() === ""
+        ? "Your name is required"
+        : undefined;
+    case "email": {
+      const trimmed = (value as string).trim();
+      if (trimmed === "") return "Email is required";
+      if (!EMAIL_PATTERN.test(trimmed)) return "Enter a valid email address";
+      return undefined;
+    }
+    case "phone": {
+      const trimmed = (value as string).trim();
+      if (trimmed === "") return "Phone number is required";
+      if (!PHONE_PATTERN.test(trimmed)) return "Enter a valid phone number";
+      return undefined;
+    }
+    case "services":
+      return (value as string[]).length === 0
+        ? "Select at least one service"
+        : undefined;
+    case "message":
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
+const fieldBaseClassName =
+  "w-full rounded-lg border bg-[#0000000A] px-[1.15em] py-[1em] text-body text-[#392B56] placeholder-[#00000066] outline-none transition-colors focus:bg-[#EFEDE9] disabled:cursor-not-allowed disabled:opacity-50";
+
+function fieldClassName(hasError: boolean, extra = "") {
+  return `${fieldBaseClassName} ${hasError ? "border-red-500" : "border-transparent"} ${extra}`;
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mt-[0.43em] text-micro text-red-500">{message}</p>;
+}
+
+export default function ContactRequestForm({
+  titleId,
+  title,
+  description,
+  onClose,
+}: {
+  titleId: string;
+  title: string;
+  description: string;
+  onClose: () => void;
+}) {
+  const [category, setCategory] = useState<Category>("New project");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [isServicesOpen, setIsServicesOpen] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
+
+  const servicesRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Escape belongs to the innermost thing that is open: the services list
+  // first, the modal only once it is closed. This panel owns the key for the
+  // whole modal (`RequestModal` deliberately doesn't bind it) so that
+  // decision lives in one place.
+  useEscapeKey(() => {
+    if (isServicesOpen) {
+      setIsServicesOpen(false);
+      return;
+    }
+    onClose();
+  });
+
+  useEffect(() => {
+    nameRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!isServicesOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!servicesRef.current?.contains(event.target as Node)) {
+        setIsServicesOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isServicesOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    };
+  }, []);
+
+  function handleFieldChange<K extends "name" | "email" | "phone" | "message">(
+    field: K,
+    value: string,
+    setter: (value: string) => void,
+  ) {
+    setter(value);
+    if (hasSubmitted) {
+      setErrors((prev) => ({ ...prev, [field]: validateField(field, value) }));
+    }
+  }
+
+  function toggleService(service: string) {
+    const next = selectedServices.includes(service)
+      ? selectedServices.filter((item) => item !== service)
+      : [...selectedServices, service];
+
+    setSelectedServices(next);
+    if (hasSubmitted) {
+      setErrors((prev) => ({
+        ...prev,
+        services: validateField("services", next),
+      }));
+    }
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nextErrors: FormErrors = {
+      name: validateField("name", name),
+      email: validateField("email", email),
+      phone: validateField("phone", phone),
+      services: validateField("services", selectedServices),
+      message: validateField("message", message),
+    };
+
+    setErrors(nextErrors);
+    setHasSubmitted(true);
+
+    const hasErrors = Object.values(nextErrors).some(Boolean);
+    if (hasErrors) return;
+
+    setIsServicesOpen(false);
+    setStatus("loading");
+    loadingTimeoutRef.current = setTimeout(() => {
+      setStatus("success");
+    }, LOADING_DURATION_MS);
+  }
+
+  const servicesTriggerLabel = isServicesOpen
+    ? null
+    : selectedServices.length > 0
+      ? selectedServices.join(", ")
+      : "/ Service *";
+
+  const isSubmitting = status === "loading";
+
+  if (status === "success") {
+    return (
+      <div className="flex min-h-[16em] flex-col items-center justify-center gap-fluid-sm text-center">
+        <SuccessCheckIcon />
+
+        <div className="animate-fade-in-up flex flex-col gap-fluid-2xs">
+          <p
+            id={titleId}
+            className="text-[max(18px,1.4vw)] leading-tight text-[#392B56]"
+          >
+            Thanks — message sent.
+          </p>
+          <p className="max-w-[26em] text-body text-[#8A8781]">
+            A founder or design lead — never a bot — will read your note and
+            reply within two working days.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2
+        id={titleId}
+        className="text-[max(20px,1.67vw)] leading-tight tracking-[-0.033em] text-[#392B56]"
+      >
+        {title}
+      </h2>
+
+      <p className="mt-fluid-xs text-body text-[#8A8781]">{description}</p>
+
+      <div className="mt-fluid-md">
+        <HighlightMark text="I'm here about" className="text-neutral-400" />
+
+        <div className="mt-fluid-xs flex flex-wrap gap-x-[max(24px,1.67vw)] gap-y-fluid-2xs">
+          {CATEGORIES.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setCategory(item)}
+              className={`relative cursor-pointer pb-fluid-2xs text-body transition-colors ${
+                category === item
+                  ? "text-[#392B56]"
+                  : "text-[#8A8781] hover:text-[#392B56]"
+              }`}
+            >
+              {item}
+              {category === item && (
+                <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#6D5B95]" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* `text-body` on the form itself is what every `em` below resolves
+          against, so the whole control set scales as one. */}
+      <form
+        className="mt-fluid-md flex flex-col gap-[1.14em] text-body"
+        onSubmit={handleSubmit}
+        noValidate
+      >
+        <input type="hidden" name="category" value={category} />
+
+        <div className="grid grid-cols-1 gap-[1.14em] sm:grid-cols-2">
+          <div>
+            <input
+              ref={nameRef}
+              type="text"
+              name="name"
+              autoComplete="name"
+              placeholder="/ Your name"
+              value={name}
+              disabled={isSubmitting}
+              onChange={(event) =>
+                handleFieldChange("name", event.target.value, setName)
+              }
+              className={fieldClassName(Boolean(errors.name))}
+            />
+            <FieldError message={errors.name} />
+          </div>
+
+          <div>
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              placeholder="/ Email"
+              value={email}
+              disabled={isSubmitting}
+              onChange={(event) =>
+                handleFieldChange("email", event.target.value, setEmail)
+              }
+              className={fieldClassName(Boolean(errors.email))}
+            />
+            <FieldError message={errors.email} />
+          </div>
+        </div>
+
+        <div>
+          <input
+            type="tel"
+            name="phone"
+            autoComplete="tel"
+            placeholder="/ Phone"
+            value={phone}
+            disabled={isSubmitting}
+            onChange={(event) =>
+              handleFieldChange("phone", event.target.value, setPhone)
+            }
+            className={fieldClassName(Boolean(errors.phone))}
+          />
+          <FieldError message={errors.phone} />
+        </div>
+
+        <div ref={servicesRef} className="relative">
+          <button
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={isServicesOpen}
+            disabled={isSubmitting}
+            onClick={() => setIsServicesOpen((open) => !open)}
+            className={fieldClassName(
+              Boolean(errors.services),
+              `flex cursor-pointer items-center justify-between gap-[0.57em] text-left ${isServicesOpen ? "bg-[#EFEDE9]" : ""}`,
+            )}
+          >
+            {isServicesOpen ? (
+              <span className="text-[#392B56]/70">
+                Services <span className="text-red-500">*</span>
+              </span>
+            ) : (
+              <span
+                className={
+                  selectedServices.length > 0
+                    ? "truncate text-[#392B56]"
+                    : "text-[#8A8781]"
+                }
+              >
+                {servicesTriggerLabel}
+              </span>
+            )}
+
+            <svg
+              className={`h-[1em] w-[1em] shrink-0 text-[#392B56]/60 transition-transform duration-200 ${isServicesOpen ? "rotate-180" : ""}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                d="M6 9l6 6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          {isServicesOpen && (
+            <div
+              role="listbox"
+              aria-multiselectable="true"
+              className="no-scrollbar absolute inset-x-0 top-full z-20 mt-[0.57em] max-h-[20.5em] overflow-y-auto rounded-lg border border-[#392B561F] bg-white p-[0.57em] shadow-lg"
+            >
+              {SERVICES.map((service) => {
+                const checked = selectedServices.includes(service);
+
+                return (
+                  <label
+                    key={service}
+                    className="flex cursor-pointer items-center gap-[0.86em] rounded-md px-[0.86em] py-[0.71em] text-body text-[#392B56]/80 transition-colors hover:bg-[#F5F4F2]"
+                  >
+                    <span className="relative flex h-[1.14em] w-[1.14em] shrink-0 items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleService(service)}
+                        className="peer sr-only"
+                      />
+                      <span className="h-[1.14em] w-[1.14em] rounded-sm border border-[#392B56]/30 transition-colors peer-checked:border-[#392B56] peer-checked:bg-[#392B56]" />
+                      <svg
+                        className={`absolute h-[0.86em] w-[0.86em] text-white ${checked ? "opacity-100" : "opacity-0"}`}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path
+                          d="M5 13l4 4L19 7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+
+                    {service}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <FieldError message={errors.services} />
+        </div>
+
+        <div>
+          <textarea
+            name="message"
+            placeholder="/ Tell us about your project"
+            rows={4}
+            value={message}
+            disabled={isSubmitting}
+            onChange={(event) =>
+              handleFieldChange("message", event.target.value, setMessage)
+            }
+            className={fieldClassName(Boolean(errors.message), "resize-none")}
+          />
+          <FieldError message={errors.message} />
+        </div>
+
+        <div className="mt-fluid-2xs flex flex-col items-center gap-fluid-xs md:flex-row">
+          <ButtonBlue
+            text="Send message"
+            type="submit"
+            className="w-full md:w-max"
+            loading={isSubmitting}
+          />
+          <p className="text-micro text-[#8A8781]">
+            We reply within two working days.
+          </p>
+        </div>
+      </form>
+    </div>
+  );
+}
