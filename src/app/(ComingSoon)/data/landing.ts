@@ -114,4 +114,9 @@ export const requestCtas: Record<"deck" | "caseStudy", RequestCta> = {
   },
 };
 
-export const contactEmail = "studio@stikkmanux.design";
+/**
+ * The studio's public address. Read by the header's `mailto:` link and by
+ * both request forms, which offer it as the fallback when a submission
+ * can't reach the sheet.
+ */
+export const contactEmail = "hello@stikkmanux.com";
