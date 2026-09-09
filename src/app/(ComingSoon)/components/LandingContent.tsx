@@ -1,18 +1,18 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import Container from "@/app/shared/Container";
+import FluidContainer from "@/app/(ComingSoon)/components/FluidContainer";
 import HighlightMark from "@/app/shared/HighlightMark";
 import { ButtonBlue, ButtonWhite } from "@/app/shared/Button";
 import Countdown from "@/app/(ComingSoon)/components/Countdown";
 import RequestModal from "@/app/(ComingSoon)/components/RequestModal";
+import { CONTACT_HREF } from "@/lib/contactCta";
 import {
   eyebrow,
   headingLines,
   heroRotatingWords,
   requestCtas,
-  services,
   type RequestCta,
 } from "@/app/(ComingSoon)/data/landing";
 
@@ -128,11 +128,44 @@ export default function LandingContent() {
     };
   }, []);
 
-  function openRequest(cta: RequestCta) {
+  // The site header is global and carries a “let’s talk” CTA that opts into
+  // the scroll-to-the-footer-form behaviour by marking itself
+  // `data-contact-cta` (see `lib/contactCta.ts`). This page has no footer —
+  // it is one full screen — so `ContactCtaListener` finds no `#contact`
+  // anchor, leaves the click alone, and a button CTA then does nothing at all.
+  //
+  // Route it into this page’s own callback request instead, which asks for
+  // exactly what the footer form asks for. Capture phase and the same guards
+  // as that listener, so the two agree on which clicks count as a contact CTA.
+  useEffect(() => {
+    function handleContactCta(event: MouseEvent) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      const trigger = (event.target as Element | null)?.closest?.(
+        `a[href*="${CONTACT_HREF}"], [data-contact-cta]`,
+      );
+      if (!trigger) return;
+
+      event.preventDefault();
+      openRequest(
+        requestCtas.caseStudy,
+        trigger instanceof HTMLElement ? trigger : null,
+      );
+    }
+
+    document.addEventListener("click", handleContactCta, true);
+    return () => document.removeEventListener("click", handleContactCta, true);
+  }, []);
+
+  function openRequest(cta: RequestCta, trigger?: HTMLElement | null) {
     triggerRef.current =
-      document.activeElement instanceof HTMLElement
+      trigger ??
+      (document.activeElement instanceof HTMLElement
         ? document.activeElement
-        : null;
+        : null);
     setRequest(cta);
   }
 
@@ -153,7 +186,7 @@ export default function LandingContent() {
           offsets the centring by half its value and the column sits visibly
           high of the middle — which the top meta bar makes obvious, since it
           gives the eye a fixed reference at the top edge. */}
-      <Container className="absolute inset-0 z-10 flex items-center">
+      <FluidContainer className="absolute inset-0 z-10 flex items-center">
         <div>
           {/* No width cap on the heading, deliberately. The rotator words are
               `whitespace-nowrap` — they have to be, or a long one would wrap
@@ -246,22 +279,26 @@ export default function LandingContent() {
             </div>
           </div>
         </div>
-      </Container>
+      </FluidContainer>
 
       {/* Bottom-right corner. `pointer-events-none` because this box spans the
           full width and would otherwise sit over the CTA buttons and swallow
           their clicks — nothing in here is interactive. */}
-      <Container className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-end pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
+      <FluidContainer className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-end pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
         <div
           ref={(el) => {
             tailRefs.current[2] = el;
           }}
           className="flex flex-col items-end gap-fluid-sm opacity-0"
         >
-          <HighlightMark text={eyebrow} className="text-right text-[#8A8781]" />
+          <HighlightMark
+            text={eyebrow}
+            className="text-right text-[#8A8781]"
+            sizeClassName="text-micro tracking-[0.1725em]"
+          />
           <Countdown />
         </div>
-      </Container>
+      </FluidContainer>
 
       <RequestModal request={request} onClose={closeRequest} />
     </>

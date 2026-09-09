@@ -1,33 +1,34 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Fluid scale.
+   Fluid scale — used by the Coming Soon page only.
 
-   This app deliberately departs from the main site's fixed layout system (a
-   1550px cap with 16/80px gutters and breakpoint-stepped type). One
-   full-screen page, read at arm's length on a laptop and across a room on a
-   40-inch display, has to hold the same proportions in both — and a capped,
-   fixed scale cannot: past the cap the content stops growing while the
-   viewport keeps going, so the page becomes a small block marooned in the
-   middle of the screen.
+   The rest of the site is a fixed layout (a 1550px cap with 16/80px gutters
+   and breakpoint-stepped type). That works for a scrolling page, but not for
+   `/coming-soon`, which is a single full-screen composition read at arm's
+   length on a laptop and across a room on a large display: past the cap its
+   content stops growing while the viewport keeps going, so the page becomes a
+   small block marooned in the middle of the screen.
 
-   So every size here is `max(floor, N vw)`. Below the floor's crossover width
-   the design holds its small-screen size; above it, every value grows in
-   lockstep with the viewport, so the composition is identical at every size
-   and only its absolute pixel dimensions change.
+   So every token here is `max(floor, N vw)`. Below the floor's crossover
+   width the design holds its small-screen size; above it, every value grows
+   in lockstep with the viewport, so the composition is identical at every
+   size and only its absolute pixel dimensions change.
 
-   The `N` values are chosen so each token lands on its original fixed size at
-   1440px, the width the design was drawn at. That makes this a strict
-   generalisation of the existing look rather than a redesign: at 1440px the
-   page is pixel-for-pixel what it was before.
+   The `N` values land each token on its original fixed size at 1440px, the
+   width the design was drawn at — so at 1440px this is pixel-for-pixel the
+   site's own scale rather than a second design language.
+
+   Additive: nothing outside `(ComingSoon)` references these, and no existing
+   utility is redefined.
 --------------------------------------------------------------------------- */
 @theme {
   /* Type ------------------------------------------------------------------ */
 
   /* h1. The 26px floor is what keeps the longest line (DIGITAL EXPERIENCE,
      18 characters) inside the 328px of content space left at the 360px
-     floor — the mask that reveals it is `overflow-hidden`, so an overrun
-     would be clipped rather than scrolled. */
+     viewport floor — the mask that reveals it is `overflow-hidden`, so an
+     overrun would be clipped rather than scrolled. */
   --text-hero: max(26px, 4.8vw);
   --text-hero--line-height: max(30px, 5vw);
   --text-hero--letter-spacing: -0.031em;
@@ -42,37 +43,38 @@
   --text-body--line-height: 1.7;
   --text-body--letter-spacing: -0.016em;
 
-  /* Mono labels, nav, buttons — the main site's `text-xs`. */
+  /* Mono labels and buttons — the site's `text-xs`. */
   --text-micro: max(12px, 0.83vw);
   --text-micro--line-height: 1.35;
 
-  /* Countdown unit labels — the main site's 10px mono. */
+  /* Countdown unit labels — the site's 10px mono. */
   --text-nano: max(10px, 0.7vw);
   --text-nano--line-height: 1.4;
 
   /* Space ----------------------------------------------------------------- */
 
-  /* Horizontal page gutter. One formula instead of the main site's 16px to
-     80px step at `lg`, so the margin grows continuously rather than jumping.
-     Lands on 40px at 1440px, matching the hero's `lg:px-10`. */
+  /* Horizontal page gutter. One formula instead of the site's 16px to 80px
+     step at `lg`, so the margin grows continuously rather than jumping.
+     Lands on 40px at 1440px, matching the Home hero's `lg:px-10`. */
   --spacing-gutter: max(16px, 2.78vw);
   --spacing-gutter-y: max(24px, 1.67vw);
 
-  /* The header's collapsed bar. Mirrored in `shared/Header.tsx`, which needs
-     the number to hand to GSAP — see the note there. */
-  --spacing-bar: max(54px, 3.75vw);
+  /* The Header's collapsed bar (`shared/Header.tsx` tweens its height to a
+     flat 54px). Kept as a token so the Coming Soon page's bottom-right block
+     can clear the bar without repeating the number; change both together. */
+  --spacing-bar: 54px;
 
   --spacing-fluid-2xs: max(8px, 0.55vw);
   --spacing-fluid-xs: max(12px, 0.83vw);
   --spacing-fluid-sm: max(20px, 2.2vw);
   --spacing-fluid-md: max(24px, 2.8vw);
 
-  /* Vertical rhythm inside the hero column - the gaps between the heading,
-     the sector list, the intro line and the CTA row. Deliberately tighter
-     than the generic fluid steps above so those four read as one block
-     rather than four separate ones. Kept as their own tokens instead of
-     retuning `--spacing-fluid-sm`/`-md`, which the modal and the corner
-     block also use and which should not move with this. */
+  /* Vertical rhythm inside the hero column — the gaps between the heading,
+     the launch line and the CTA row. Deliberately tighter than the generic
+     fluid steps above so those parts read as one block rather than three
+     separate ones. Their own tokens rather than a retune of
+     `--spacing-fluid-sm`/`-md`, which the modal and the corner block also
+     use and which should not move with this. */
   --spacing-stack: max(12px, 1.1vw);
   --spacing-stack-lg: max(16px, 1.7vw);
 }
@@ -119,7 +121,7 @@
 }
 
 /* Consumes the per-element left side bearing measured by
-   src/lib/OpticalAlign.ts, so the text's ink — not its invisible bearing —
+   src/lib/OpticalAlign.ts, so the text's *ink* — not its invisible bearing —
    meets the container edge. `--optical-left` is written by JS after the
    webfont loads; the 0em fallback means the pre-JS render is simply
    uncorrected rather than shifted by a guess (one small reflow, not two).
@@ -136,17 +138,19 @@
     /* Vertical: trim the font's half-leading and the gap between the ascender
        and the cap height, so a box's top edge is the cap top and its bottom
        edge is the baseline. This is what makes two elements with the same
-       `top` actually look aligned despite different font-sizes. Pure CSS. */
+       `top` actually look aligned despite different font-sizes — e.g. Home's
+       ApproachSection, where a 12px mono HighlightMark is absolutely
+       positioned at `top: 0` beside a 35px statement. Pure CSS, no JS. */
     text-box: trim-both cap alphabetic;
   }
 
-  /* An `alphabetic` under-edge puts the box bottom at the baseline, so
+  /* An `alphabetic` under-edge puts the box bottom *at the baseline*, so
      descenders hang outside the box by design — normally harmless, since they
-     still paint. Inside a clip mask they get sheared instead, and the landing
-     heading is exactly that pattern: every line is wrapped in
-     `span.block.overflow-hidden` for the GSAP reveal. Keep the font's descent
-     room for it. `:has()` carries `.overflow-hidden`'s specificity (0,1,0),
-     so this beats the rule above. */
+     still paint. Inside a clip mask they get sheared instead: `HeroTitle`
+     wraps its text in `span.block.overflow-hidden` for the GSAP reveal, and
+     measured on /work/garuda-aerospace the "p" of "Aerospace" loses 36px of
+     its tail. Keep the font's descent room for that pattern. `:has()` carries
+     `.overflow-hidden`'s specificity (0,1,0), so this beats the rule above. */
   :where(h1, h2, h3, h4, h5, h6, p, blockquote, figcaption, dt, dd):has(
       .overflow-hidden
     ) {
@@ -158,7 +162,7 @@
    a vertically-centered label whose box should keep its natural leading.
    Sets the full `text-box` shorthand (trim + edge), not just the trim
    longhand: an element that also matches the `:has(.overflow-hidden)` rule
-   above gets its own `text-box-edge: cap text` at higher specificity, and
+   below gets its own `text-box-edge: cap text` at higher specificity, and
    since that rule lives in the same @layer base as the blanket trim, only
    resetting `text-box-trim` here would leave that edge override in place.
    Unlayered beats any layered declaration regardless of specificity, so
@@ -168,7 +172,9 @@
 }
 
 /* Explicit opt-in, deliberately unlayered so it wins over Tailwind utilities:
-   asking for it by name is a stronger signal than the blanket pass above. */
+   asking for it by name is a stronger signal than the blanket pass above.
+   Use on elements outside the auto list (a `span`, `a`, or `li` that really
+   does start a column), and keep left-margin utilities on a parent. */
 .optical-align,
 [data-optical]:not([data-optical="off"]) {
   margin-inline-start: var(--optical-left, 0em);
@@ -176,9 +182,46 @@
 
 /* Wrapping body copy: correcting only the first line is the closer
    approximation, since every other line starts with a different glyph.
-   Use this class instead of .optical-align, not alongside it. */
+   Use this class *instead of* .optical-align, not alongside it. */
 .optical-align-indent {
   text-indent: var(--optical-left, 0em);
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 16s linear infinite;
+}
+
+/* Same loop as `.animate-marquee`, but pauses on hover — used by the About
+   page's Gallery/Trusted-by strips so a visitor can actually look at a
+   frame instead of it always drifting. */
+.animate-marquee-hover-pause {
+  animation: marquee 16s linear infinite;
+}
+
+.animate-marquee-hover-pause:hover {
+  animation-play-state: paused;
+}
+
+@keyframes hero-timer-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.hero-timer-fill {
+  animation: hero-timer-fill linear forwards;
 }
 
 @keyframes fade-in-up {
@@ -194,6 +237,19 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
 }
 
 @keyframes success-check-pop {
@@ -214,25 +270,33 @@
   animation: success-check-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
 }
 
-/* The modal's backdrop, faded in on mount so opening never snaps. */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.testimonial-swiper .swiper-slide {
+  opacity: 0.35;
+  filter: blur(1px);
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out both;
+.testimonial-swiper .swiper-slide-active {
+  opacity: 1;
+  filter: none;
 }
 
-/* Keeps an element scrollable while hiding its scrollbar chrome — here, the
-   modal panel on a short viewport. Three declarations because no single one
-   covers every engine: Firefox and Chrome/Edge 121+ honor `scrollbar-width`,
-   older WebKit/Blink only the pseudo-element, and legacy Edge/IE only
-   `-ms-overflow-style`. Scrolling itself is untouched. */
+.testimonial-swiper .testimonial-card {
+  transform: scale(0.85);
+  transition:
+    transform 0.7s ease;
+}
+
+.testimonial-swiper .swiper-slide-active .testimonial-card {
+  transform: scale(1);
+}
+
+/* Keeps an element scrollable while hiding its scrollbar chrome — the Header's
+   menu overlay, whose content is taller than the box clipping it for the whole
+   54px → 100dvh expand, so a scrollbar would flash in and out on every toggle.
+   Three declarations because no single one covers every engine: Firefox and
+   Chrome/Edge 121+ honor `scrollbar-width`, older WebKit/Blink only the
+   pseudo-element, and legacy Edge/IE only `-ms-overflow-style`. Scrolling
+   itself — wheel, touch, keyboard — is untouched. */
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -240,4 +304,22 @@
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Starting state for any section that should fade/slide up into view.
+   CSS alone can't detect scroll position — pair this with the
+   useRevealSection hook (src/lib/hooks/useRevealSection.ts), which adds
+   .is-visible the first time the section enters the viewport and never
+   removes it, so the reveal only ever plays scrolling down, once. */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(48px);
+  transition:
+    opacity 0.8s ease-out,
+    transform 0.8s ease-out;
+}
+
+.reveal-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }

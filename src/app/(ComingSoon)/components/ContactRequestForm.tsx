@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import HighlightMark from "@/app/shared/HighlightMark";
 import SuccessCheckIcon from "@/app/shared/SuccessCheckIcon";
 import { ButtonBlue } from "@/app/shared/Button";
-import { useEscapeKey } from "@/lib/useEscapeKey";
+import { useEscapeKey } from "@/lib/hooks/useEscapeKey";
 import { SHEET_HEADERS, submitToSheet } from "@/lib/formSubmission";
 import { contactEmail } from "@/app/(ComingSoon)/data/landing";
 
@@ -244,7 +244,10 @@ export default function ContactRequestForm({
   if (status === "success") {
     return (
       <div className="flex min-h-[16em] flex-col items-center justify-center gap-fluid-sm text-center">
-        <SuccessCheckIcon />
+        <SuccessCheckIcon
+          className="h-[max(56px,3.9vw)] w-[max(56px,3.9vw)] bg-[#392B56]"
+          iconClassName="h-[max(28px,1.95vw)] w-[max(28px,1.95vw)] text-white"
+        />
 
         <div className="animate-fade-in-up flex flex-col gap-fluid-2xs">
           <p
@@ -276,6 +279,7 @@ export default function ContactRequestForm({
       <HighlightMark
         text="I'm here about a New Project"
         className="mt-fluid-md text-neutral-400"
+        sizeClassName="text-micro tracking-[0.1725em]"
       />
 
       {/* `text-body` on the form itself is what every `em` below resolves

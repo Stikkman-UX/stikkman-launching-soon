@@ -1,4 +1,4 @@
-import Container from "@/app/shared/Container";
+import FluidContainer from "@/app/(ComingSoon)/components/FluidContainer";
 import LandingContent from "@/app/(ComingSoon)/components/LandingContent";
 import { topBar } from "@/app/(ComingSoon)/data/landing";
 
@@ -11,9 +11,9 @@ import { topBar } from "@/app/(ComingSoon)/data/landing";
  * Full-bleed: `h-dvh` (not `h-screen`, which measures against the largest
  * mobile viewport and leaves the hero partly behind the address bar) and
  * `w-full` (not `w-screen`, which includes the scrollbar and causes a
- * horizontal scroll). `LandingContent` brings its own `Container`s so both of
- * its blocks — the left column and the bottom-right corner — line up with the
- * same fluid gutter as this top bar.
+ * horizontal scroll). `LandingContent` brings its own `FluidContainer`s, so
+ * both of its blocks — the left column and the bottom-right corner — line up
+ * with the same fluid gutter as this top bar.
  */
 export default function ComingSoonSection() {
   return (
@@ -63,14 +63,14 @@ export default function ComingSoonSection() {
         }}
       />
 
-      <Container
+      <FluidContainer
         as="header"
         className="absolute inset-x-0 top-0 flex items-center justify-between py-gutter-y text-micro font-normal tracking-normal text-[#8A8781]"
       >
         <span>{topBar.left}</span>
         <span className="hidden md:block">{topBar.center}</span>
         <span className="hidden md:block">{topBar.right}</span>
-      </Container>
+      </FluidContainer>
 
       <LandingContent />
     </section>

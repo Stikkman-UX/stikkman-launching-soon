@@ -1,7 +1,21 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Header from "@/app/shared/Header";
+import SmoothScroll from "@/app/shared/SmoothScroll";
+import ContactCtaListener from "@/app/shared/ContactCtaListener";
 import OpticalAlignProvider from "@/app/shared/OpticalAlignProvider";
+import Header from "@/app/shared/Header";
+import { CaseStudyHeaderProvider } from "@/app/shared/CaseStudyHeaderContext";
+import { pickList } from "@/app/(Home)/data/fallback";
+import {
+  menuLinksFallback,
+  sectorsDropdownFallback,
+  servicesDropdownFallback,
+  socialLinksFallback,
+  topBarLinksFallback,
+} from "@/app/shared/data/navigationFallback";
+import { resolveNavHrefs } from "@/lib/comingSoon";
+import { getPublicNavigation } from "@/lib/api/navigation";
+import type { NavigationPublicContent } from "@/lib/api/types";
 import "./globals.css";
 
 const geistMono = Geist_Mono({
@@ -13,6 +27,7 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+
 
 export const metadata: Metadata = {
   // Chrome asks for /favicon.ico at the origin root whether or not a <link>
@@ -54,11 +69,33 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+/**
+ * Server-only. Deliberately never `serverApiFetch` — this renders from the
+ * root layout, which wraps every route including the ISR-static
+ * `/work/[slug]` and `/sectors/[slug]`; touching `next/headers`'s
+ * `cookies()` here would force those pages into fully dynamic rendering.
+ * Falls back to `{}` on any error, same as `page.tsx`'s `resolveHomeContent`
+ * — every section below then falls back further, per-field (Rule 5).
+ */
+async function resolveNavigationContent(): Promise<NavigationPublicContent> {
+  try {
+    return await getPublicNavigation();
+  } catch (error) {
+    console.error(
+      "[RootLayout] getPublicNavigation failed, falling back to static nav:",
+      error
+    );
+    return {};
+  }
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = await resolveNavigationContent();
+
   return (
     <html
       lang="en"
@@ -94,11 +131,32 @@ export default function RootLayout({
       </head>
       <body
         style={{ fontFamily: "var(--font-geist-sans)" }}
-        className="min-h-full bg-white"
+        className="min-h-full bg-white "
       >
-        <Header />
-        <OpticalAlignProvider />
-        {children}
+        <CaseStudyHeaderProvider>
+          {/* Every nav destination is rewritten for this site by
+              `resolveNavHrefs` — the CMS is shared with the full site, where
+              these links point at pages that only exist there. Social links
+              are external and pass through untouched. */}
+          <Header
+            topBarLinks={resolveNavHrefs(
+              pickList(content.topBarLinks?.items, topBarLinksFallback)
+            )}
+            menuLinks={resolveNavHrefs(
+              pickList(content.menuLinks?.items, menuLinksFallback)
+            )}
+            sectorsDropdown={resolveNavHrefs(
+              pickList(content.sectorsDropdown?.items, sectorsDropdownFallback)
+            )}
+            servicesDropdown={resolveNavHrefs(
+              pickList(content.servicesDropdown?.items, servicesDropdownFallback)
+            )}
+            socialLinks={pickList(content.socialLinks?.items, socialLinksFallback)}
+          />
+          <ContactCtaListener />
+          <OpticalAlignProvider />
+          <SmoothScroll>{children}</SmoothScroll>
+        </CaseStudyHeaderProvider>
       </body>
     </html>
   );

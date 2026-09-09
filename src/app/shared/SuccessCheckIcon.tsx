@@ -1,19 +1,27 @@
 /**
- * The filled check that heads every "we got it" state — the email request
- * modal's and the contact panel's alike, so the two never drift apart.
- *
- * Sized in fluid tokens rather than the main site's fixed `h-14`/`h-7`: at
- * 1440px these are exactly that 56px disc with a 28px tick.
+ * The filled check used by every "we got it" success state — the footer
+ * contact form's and the "request company deck" modal's alike, so the two
+ * never drift apart. Defaults match the footer's dark-surface look
+ * (`bg-white/10`, white check); pass `className`/`iconClassName` to adapt it
+ * to a light surface (see `RequestDeckModal`).
  */
-export default function SuccessCheckIcon() {
+export default function SuccessCheckIcon({
+  className = "h-12 w-12 bg-white/10",
+  iconClassName = "h-6 w-6 text-white",
+}: {
+  className?: string;
+  iconClassName?: string;
+}) {
   return (
-    <span className="animate-success-check flex h-[max(56px,3.9vw)] w-[max(56px,3.9vw)] items-center justify-center rounded-full bg-[#392B56]">
+    <span
+      className={`animate-success-check flex items-center justify-center rounded-full ${className}`}
+    >
       <svg
-        className="h-[max(28px,1.95vw)] w-[max(28px,1.95vw)] text-white"
+        className={iconClassName}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth={2.5}
+        strokeWidth={2}
       >
         <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>

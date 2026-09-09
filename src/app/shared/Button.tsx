@@ -1,26 +1,28 @@
 "use client";
 
+import Link from "next/link";
+import { CONTACT_HREF } from "@/lib/contactCta";
+
 type ButtonProps = {
   text: string;
+  href?: string;
   className?: string;
   onClick?: () => void;
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
   withoutIcon?: boolean;
   loading?: boolean;
+  /**
+   * Smooth-scrolls to the footer contact form and focuses it, instead of
+   * navigating. Implied by `href="#contact"` — see `isContactCta` below.
+   */
+  contactCta?: boolean;
 };
 
-/**
- * Every dimension inside the button is expressed in `em`, so the whole
- * control scales with `text-micro`'s fluid font size instead of staying a
- * fixed 44px pill that shrinks into a large display. At the 12px floor these
- * resolve to exactly the main site's values: `px-6` (24px), `h-11` (44px),
- * `gap-2` (8px), and a 14px icon.
- */
 function ArrowIcon() {
   return (
     <svg
-      className="h-[1.17em] w-[1.17em] shrink-0"
+      className="h-3.5 w-3.5 shrink-0"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -37,11 +39,7 @@ function ArrowIcon() {
 
 function Spinner() {
   return (
-    <svg
-      className="h-[1.17em] w-[1.17em] shrink-0 animate-spin"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
+    <svg className="h-3.5 w-3.5 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none">
       <circle
         className="opacity-25"
         cx="12"
@@ -61,17 +59,23 @@ function Spinner() {
 
 // Diagonal background sweep: a low-opacity slanted panel parked off the
 // left edge, slid past the right edge on hover — a tint passing through
-// rather than a solid repaint. Keys off `group/sweep`; that ancestor needs
-// `relative overflow-hidden`. `transition-transform` stays on at all times;
-// only `duration` toggles between 0 (idle/leave — snaps back instantly) and
-// 700ms (hover), which keeps the sweep one-way, left-to-right.
+// rather than a solid repaint, so the button text underneath stays
+// readable throughout. Keys off the nearest ancestor carrying the named
+// group `group/sweep` — that ancestor also needs `relative overflow-hidden`
+// so the panel is clipped to its own shape instead of spilling out.
+// `variant` picks the panel color: "light" (white) for dark buttons, "dark"
+// (violet) for light buttons, so the sweep stays visible against whichever
+// background it moves across. `transition-transform` stays on at all times
+// so the property itself never flickers on/off; only `duration` toggles
+// between 0 (idle/leave — snaps back instantly) and 500ms (hover — animates),
+// which is what keeps the sweep a one-way, left-to-right effect instead of
+// also playing in reverse on mouse-leave.
 export function ButtonHoverSweep({
   variant = "light",
 }: {
   variant?: "light" | "dark";
 }) {
-  const sweepColorClassName =
-    variant === "dark" ? "bg-[#392B56]/20" : "bg-white/30";
+  const sweepColorClassName = variant === "dark" ? "bg-[#392B56]/20" : "bg-white/30";
 
   return (
     <span
@@ -88,7 +92,7 @@ function ButtonContent({
 }: Pick<ButtonProps, "text" | "withoutIcon" | "loading">) {
   if (loading) {
     return (
-      <span className="relative z-10 inline-flex items-center gap-[0.67em]">
+      <span className="relative z-10 inline-flex items-center gap-2">
         <Spinner />
         Loading...
       </span>
@@ -96,38 +100,68 @@ function ButtonContent({
   }
 
   return (
-    <span className="relative z-10 inline-flex items-center gap-[0.67em]">
+    <span className="relative z-10 inline-flex items-center gap-2">
       {text}
       {!withoutIcon && <ArrowIcon />}
     </span>
   );
 }
 
-/**
- * Ported from the main site's `shared/Button.tsx`, minus its `href`/`Link`
- * overlay branch and the `contactCta` scroll plumbing: every button on this
- * page is an `onClick` handler, never a destination.
- */
-function renderButton(
-  colorClassName: string,
-  sweepVariant: "light" | "dark",
-  {
-    text,
-    className = "",
-    onClick,
-    type = "button",
-    disabled = false,
-    withoutIcon = false,
-    loading = false,
-  }: ButtonProps,
-) {
-  const sharedClassName = `group relative overflow-hidden cursor-pointer inline-flex w-fit items-center justify-center gap-[0.67em] rounded-full px-[2em] h-[3.67em] text-micro transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${colorClassName}`;
+function renderButton(colorClassName: string, sweepVariant: "light" | "dark", {
+  text,
+  href,
+  className = "",
+  onClick,
+  type = "button",
+  disabled = false,
+  withoutIcon = false,
+  loading = false,
+  contactCta = false,
+}: ButtonProps) {
+  const sharedClassName = `group relative overflow-hidden cursor-pointer inline-flex w-fit items-center justify-center gap-2 rounded-full px-6 py-3 h-11 text-xs transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${colorClassName}`;
+
+  // A CTA aimed at the contact form renders as a real button, never a link,
+  // even when it was authored as `href="#contact"` (which is how a CMS admin
+  // has to express it — the admin panel only offers an href field). Scrolling
+  // is an action on this page, not a destination: routing to the hash writes
+  // it into the URL, and clicking the same link again is then a no-op because
+  // the hash hasn't changed. A button has no such state, so it works on the
+  // first click and every one after it. The actual scroll is handled by the
+  // delegated listener in `shared/ContactCtaListener.tsx`.
+  const isContactCta = contactCta || href === CONTACT_HREF;
+
+  if (href && !disabled && !loading && !isContactCta) {
+    // The Link overlay sits above the button (z-10 vs z-0) and captures all
+    // pointer events, so the button itself never receives a real :hover —
+    // the sweep must key off this wrapping span (named `group/sweep` so it
+    // isn't shadowed by the button's own closer, but inert, `group`).
+    return (
+      <span className={`relative inline-flex group/sweep ${className}`}>
+        <Link
+          href={href}
+          onClick={onClick}
+          aria-label={text}
+          className="absolute inset-0 z-10 rounded-full"
+        />
+        <button
+          type="button"
+          aria-hidden="true"
+          tabIndex={-1}
+          className={`relative z-0 ${sharedClassName}`}
+        >
+          <ButtonHoverSweep variant={sweepVariant} />
+          <ButtonContent text={text} withoutIcon={withoutIcon} loading={loading} />
+        </button>
+      </span>
+    );
+  }
 
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
+      data-contact-cta={isContactCta || undefined}
       className={`group/sweep ${sharedClassName} ${className}`}
     >
       <ButtonHoverSweep variant={sweepVariant} />
@@ -141,9 +175,5 @@ export function ButtonBlue(props: ButtonProps) {
 }
 
 export function ButtonWhite(props: ButtonProps) {
-  return renderButton(
-    "bg-white border border-[#0A0A0A40] text-[#392B56]",
-    "dark",
-    props,
-  );
+  return renderButton("bg-white border border-[#0A0A0A40] text-[#392B56]", "dark", props);
 }

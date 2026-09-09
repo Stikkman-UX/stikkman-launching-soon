@@ -5,7 +5,7 @@ import HighlightMark from "@/app/shared/HighlightMark";
 import SuccessCheckIcon from "@/app/shared/SuccessCheckIcon";
 import { ButtonBlue } from "@/app/shared/Button";
 import ContactRequestForm from "@/app/(ComingSoon)/components/ContactRequestForm";
-import { useEscapeKey } from "@/lib/useEscapeKey";
+import { useEscapeKey } from "@/lib/hooks/useEscapeKey";
 import { SHEET_HEADERS, submitToSheet } from "@/lib/formSubmission";
 import { contactEmail, type RequestCta } from "@/app/(ComingSoon)/data/landing";
 
@@ -169,7 +169,10 @@ function EmailRequestForm({
   if (isSent) {
     return (
       <div className="flex min-h-[16em] flex-col items-center justify-center gap-fluid-sm text-center">
-        <SuccessCheckIcon />
+        <SuccessCheckIcon
+          className="h-[max(56px,3.9vw)] w-[max(56px,3.9vw)] bg-[#392B56]"
+          iconClassName="h-[max(28px,1.95vw)] w-[max(28px,1.95vw)] text-white"
+        />
         <div className="animate-fade-in-up flex flex-col gap-fluid-2xs">
           <p
             id={titleId}
@@ -188,7 +191,11 @@ function EmailRequestForm({
 
   return (
     <>
-      <HighlightMark text="Request" className="text-[#8A8781]" />
+      <HighlightMark
+        text="Request"
+        className="text-[#8A8781]"
+        sizeClassName="text-micro tracking-[0.1725em]"
+      />
 
       <h2
         id={titleId}
