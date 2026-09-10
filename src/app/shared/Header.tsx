@@ -337,7 +337,15 @@ export default function Header({
           operable. Each character is hidden with `visibility` rather than
           plain opacity (see the tween above), which is what takes it out of
           hit-testing as it fades. */}
-      <Link
+      {/* A plain <a>, deliberately not next/link. The intro splash runs from
+          a mount-time effect on this component, and the header lives in the
+          root layout — so a client-side navigation keeps it mounted and the
+          animation never replays. A full document load is what remounts it,
+          which is the whole point of clicking the wordmark: you go back to
+          the top and the lockup drops in again. */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- the full
+          reload is the feature here, not an oversight; see the note above. */}
+      <a
         href="/"
         ref={lockupRef}
         className="pointer-events-none absolute bottom-3.75 left-6 flex items-center gap-3 lg:left-14"
@@ -362,7 +370,7 @@ export default function Header({
             </span>
           ))}
         </span>
-      </Link>
+      </a>
 
       {/* Case-study pages only: published into `CaseStudyHeaderContext` by
           `CaseStudyHeaderTitle`, mounted from `work/[slug]/page.tsx`. "Work"
