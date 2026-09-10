@@ -70,7 +70,12 @@ const ServicesDropdownPanel = forwardRef<
               <p className="font-mono text-[10px] uppercase tracking-[1.72px] text-[#392B56]/50">
                 {"// Services"}
               </p>
-              <h3 className="mt-3 text-xl leading-tight text-[#392B56] tracking-[-0.4px]">
+              {/* `font-mono` throughout this panel, matching the header bar's
+                  own nav links ("Work & Innovation" et al. in `Header.tsx`) —
+                  the eyebrow above and the item numbers below were already
+                  set in it, and the rest was the only sans left in the
+                  header. */}
+              <h3 className="mt-3 font-mono text-xl leading-tight text-[#392B56] tracking-[-0.4px]">
                 End-to-end design solutions, built to scale.
               </h3>
             </div>
@@ -94,7 +99,7 @@ const ServicesDropdownPanel = forwardRef<
                 ))}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0" />
                 {active.description && (
-                  <p className="absolute inset-x-0 bottom-0 p-4 text-xs leading-5 text-white/90">
+                  <p className="absolute inset-x-0 bottom-0 p-4 font-mono text-xs leading-[1.45] text-white/90">
                     {active.description}
                   </p>
                 )}
@@ -117,13 +122,17 @@ const ServicesDropdownPanel = forwardRef<
                   {String(i + 1).padStart(2, "0")}
                 </p>
                 <p
-                  className={`mt-2 text-sm leading-5 transition-colors ${
+                  className={`mt-2 font-mono text-sm leading-5 transition-colors ${
                     i === activeIndex ? "text-[#392B56]" : "text-[#392B56]/70"
                   }`}
                 >
                   {item.title}
                 </p>
-                <p className="mt-1.5 text-xs leading-5 text-[#392B56]/50">
+                {/* The description sat 6px under the title on a 20px leading
+                    — too tight a gap around type set too loose, so the two
+                    read as one block. More room between them, less inside
+                    the paragraph. */}
+                <p className="mt-3 font-mono text-xs leading-[1.45] text-[#392B56]/50">
                   {item.description}
                 </p>
               </a>
