@@ -253,7 +253,7 @@ export default function LandingContent() {
                 `mt-10` (40px), and 1.11vw is that `text-base` (16px), with a
                 14px floor so it stays legible at the 360px viewport floor. */}
             <span className="text-[max(14px,1.11vw)] text-[#392B56E5]">
-              New Website Launching Soon
+              Experience Launching Soon
             </span>
           </div>
 
