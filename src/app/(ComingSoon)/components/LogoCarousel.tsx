@@ -47,7 +47,10 @@ export default function LogoCarousel({ className = "" }: { className?: string })
               // floor does the work at ordinary widths — 2vw only overtakes
               // 34px past about 1700px — which keeps the marks legible on a
               // laptop rather than scaling them down with the viewport.
-              className="mr-[max(16px,1.5vw)] h-[max(34px,2vw)] w-auto object-contain"
+              // Wider apart on a phone, where the strip is the full width and
+              // the marks would otherwise crowd; the `lg` value is the one
+              // tuned for the desktop corner.
+              className="mr-7 h-[max(34px,2vw)] w-auto object-contain lg:mr-[max(16px,1.5vw)]"
             />
           );
         })}

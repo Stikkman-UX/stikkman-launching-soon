@@ -180,16 +180,33 @@ export default function LandingContent() {
 
   return (
     <>
-      {/* `items-center` centres this column on the vertical axis only; the
-          column itself stays on the grid's left edge.
+      {/* Two layouts from one tree.
 
-          The `pb` is what lifts it clear of the logo strip. This box is
+          Below `lg` this wrapper is a real flex column over the section: the
+          statement takes whatever height the bottom block leaves and centres
+          vertically in it, so a tall phone or a tablet balances the
+          composition instead of stranding the text high with a void beneath.
+          Nothing has to guess the block's height — it is simply in flow.
+
+          On `lg` the wrapper is `display: contents`, which removes it from
+          layout entirely: its two children go back to being absolutely
+          positioned against the section — the statement centred on the
+          vertical axis over the full height, the bottom row pinned to the
+          bottom edge — exactly the desktop composition as drawn. */}
+      <div className="absolute inset-0 z-10 flex flex-col lg:contents">
+      {/* Centred on the vertical axis only, on the grid's left edge, at every
+          size — the text stays left-aligned on a phone too.
+
+          Mobile: `pt-16` so the centring runs between the meta bar and the
+          bottom block rather than from the screen's top edge.
+
+          `lg`: the `pb` is what lifts it clear of the logo strip: the box is
           `inset-0`, so padding at the bottom offsets the centring by half its
           value — normally the reason not to put any here, and exactly the
-          mechanism wanted now that the bottom-left corner is occupied. It is
-          the same expression the bottom row uses for its own offset, so the
-          two move together: change one and the gap between them holds. */}
-      <FluidContainer className="absolute inset-0 z-10 flex items-center pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
+          mechanism wanted with the bottom-left corner occupied. It is the
+          same expression the bottom row uses for its own offset, so the two
+          move together. */}
+      <FluidContainer className="relative z-10 flex min-h-0 flex-1 items-center pt-16 lg:absolute lg:inset-0 lg:min-h-full lg:flex-none lg:pt-0 lg:pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
         <div>
           {/* No width cap on the heading, deliberately. The rotator words are
               `whitespace-nowrap` — they have to be, or a long one would wrap
@@ -252,10 +269,10 @@ export default function LandingContent() {
             {/* Fluid like everything else in this column, or the label holds
                 its size while the heading above it grows with the viewport
                 and the line all but vanishes on a large display. Stepped
-                down with the headline to make room for the logo strip below,
-                keeping a 12px floor so it stays legible at the 360px
-                viewport floor. */}
-            <span className="text-[max(12px,0.95vw)] text-[#392B56E5]">
+                down with the headline to make room for the logo strip below;
+                the 14px floor is the phone size, where 0.95vw would be under
+                4px. */}
+            <span className="text-[max(14px,0.95vw)] text-[#392B56E5]">
               Experience Launching Soon
             </span>
           </div>
@@ -289,49 +306,47 @@ export default function LandingContent() {
         </div>
       </FluidContainer>
 
-      {/* The bottom row: logo strip left, countdown right. `pointer-events-none`
-          because this box spans the full width and would otherwise sit over
-          the CTA buttons and swallow their clicks — nothing in here is
-          interactive.
+      {/* The bottom block. On `lg` it is one row — logo strip left, countdown
+          right, `items-end` so the logos sit on the countdown's own baseline
+          rather than floating somewhere near it. Below `lg` it is a column:
+          the strip across the full width, the countdown under it, both on
+          the left edge so the whole phone layout reads down one axis.
 
-          `items-end` is what "aligned with the timer" means here: both blocks
-          are an eyebrow over their content, and bottom-aligning them puts the
-          logos on the countdown's own baseline rather than floating them
-          somewhere near it.
+          `pointer-events-none` because this box spans the full width and
+          would otherwise sit over the CTA buttons and swallow their clicks —
+          nothing in here is interactive.
 
-          The countdown keeps `ml-auto` rather than the row using
-          `justify-between`: below `lg` the strip is gone, and with one child
-          `justify-between` would park the countdown on the *left*. */}
-      <FluidContainer className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end gap-fluid-md pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
-        {/* Hidden below `lg`: at 390px the countdown alone takes most of the
-            row, and what was left would be too narrow for a logo to read.
-
-            No eyebrow over it, unlike the countdown: the CTA row sits
-            directly above this corner, and a label here lands close enough to
-            the buttons to read as part of them. The logos say what they are. */}
-        <div
-          ref={(el) => {
-            tailRefs.current[3] = el;
-          }}
-          className="hidden w-[34vw] opacity-0 lg:block"
-        >
-          <LogoCarousel />
-        </div>
-
+          No eyebrow over the strip, unlike the countdown: on `lg` the CTA
+          row sits directly above that corner, and a label there lands close
+          enough to the buttons to read as part of them. The logos say what
+          they are. */}
+      <FluidContainer className="pointer-events-none relative z-10 flex shrink-0 flex-col gap-fluid-md pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))] lg:absolute lg:inset-x-0 lg:bottom-0 lg:flex-row lg:items-end">
         <div
           ref={(el) => {
             tailRefs.current[2] = el;
           }}
-          className="ml-auto flex flex-col items-end gap-fluid-sm opacity-0"
+          className="w-full opacity-0 lg:w-[34vw]"
+        >
+          <LogoCarousel />
+        </div>
+
+        {/* `lg:ml-auto` rather than `justify-between` on the row: it keeps
+            the countdown on the right regardless of what else the row holds. */}
+        <div
+          ref={(el) => {
+            tailRefs.current[3] = el;
+          }}
+          className="flex flex-col items-start gap-fluid-sm opacity-0 lg:ml-auto lg:items-end"
         >
           <HighlightMark
             text={eyebrow}
-            className="text-right text-[#8A8781]"
+            className="text-[#8A8781] lg:text-right"
             sizeClassName="text-micro tracking-[0.1725em]"
           />
           <Countdown />
         </div>
       </FluidContainer>
+      </div>
 
       <RequestModal request={request} onClose={closeRequest} />
     </>

@@ -25,21 +25,28 @@
 @theme {
   /* Type ------------------------------------------------------------------ */
 
-  /* h1. The floor is what keeps the longest line (DIGITAL EXPERIENCE, 18
-     characters) inside the 328px of content space left at the 360px viewport
-     floor — the mask that reveals it is `overflow-hidden`, so an overrun
-     would be clipped rather than scrolled.
+  /* h1. Three regimes in one expression:
 
-     Stepped down from 4.8vw/5vw once the logo strip moved into the hero's
-     bottom-left corner: the statement and the strip share one screen that
-     never scrolls, so the headline giving up a few vw is what buys the
-     logos room to breathe. */
-  --text-hero: max(24px, 4.15vw);
-  --text-hero--line-height: max(28px, 4.35vw);
+     - phones (< ~426px): 9.4vw. The longest line (DIGITAL EXPERIENCE, 18
+       characters) measures 222px at 24px, so at the 360px viewport floor it
+       fits its 326px of content space up to 35.2px — 9.87vw. 9.4vw keeps a
+       5% margin under that. It has to hold, because the mask that reveals
+       each line is `overflow-hidden`: an overrun is clipped, not wrapped;
+     - tablets (~426–964px): a flat 40px, so the line doesn't balloon
+       across a portrait tablet;
+     - above that: 4.15vw, the desktop scale.
+
+     4.15vw is itself stepped down from 4.8vw once the logo strip moved into
+     the hero's bottom-left corner: the statement and the strip share one
+     screen that never scrolls, so the headline giving up a few vw is what
+     buys the logos room to breathe. */
+  --text-hero: max(min(9.4vw, 40px), 4.15vw);
+  --text-hero--line-height: max(min(9.9vw, 42px), 4.35vw);
   --text-hero--letter-spacing: -0.031em;
 
-  /* Countdown digits. */
-  --text-display: max(20px, 1.9vw);
+  /* Countdown digits. The 24px floor is the phone size — 1.9vw is under 8px
+     there — and is what the four units are sized against at 360px. */
+  --text-display: max(24px, 1.9vw);
   --text-display--line-height: 1;
   --text-display--letter-spacing: -0.028em;
 
