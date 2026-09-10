@@ -5,10 +5,12 @@ import { heroLogos } from "@/app/(ComingSoon)/data/landing";
  *
  * Every logo is `h-[…] w-auto object-contain`, so they all take the exact
  * same height and each keeps its own width — which is what makes a set of
- * mixed-aspect files read as one row rather than a ragged one. The height is
- * fluid like everything else on this page (see the `@theme` block in
- * globals.css), so the strip grows with the viewport instead of shrinking
- * into a large display.
+ * mixed-aspect files read as one row rather than a ragged one. From `lg` that
+ * height is fluid like everything else on this page (see the `@theme` block
+ * in globals.css), so the strip grows with the viewport instead of shrinking
+ * into a large display; below `lg` it is a flat, smaller value, because the
+ * fluid one is floor-bound at phone widths and its floor reads too heavy
+ * there.
  *
  * The list is rendered twice and the track translates by exactly -50%
  * (`.animate-logo-marquee`), so the second copy is under the cursor at the
@@ -43,14 +45,19 @@ export default function LogoCarousel({ className = "" }: { className?: string })
               // once, not twice.
               alt={isDuplicate ? "" : logo.name}
               aria-hidden={isDuplicate || undefined}
-              // One height for every mark, `w-auto` for every width. The
-              // floor does the work at ordinary widths — 2vw only overtakes
-              // 34px past about 1700px — which keeps the marks legible on a
-              // laptop rather than scaling them down with the viewport.
-              // Wider apart on a phone, where the strip is the full width and
-              // the marks would otherwise crowd; the `lg` value is the one
-              // tuned for the desktop corner.
-              className="mr-7 h-[max(34px,2vw)] w-auto object-contain lg:mr-[max(16px,1.5vw)]"
+              // One height for every mark, `w-auto` for every width. On a
+              // phone that is a flat 26px: the fluid expression below is
+              // floor-bound under about 1700px, so on mobile it would only
+              // ever be its 34px floor — too heavy against the type at that
+              // width, where the strip runs the full screen rather than
+              // sitting in the desktop corner. From `lg` the fluid value
+              // takes over, and its floor is what keeps the marks legible on
+              // a laptop rather than scaling them down with the viewport.
+              //
+              // Spacing runs the other way: widest on a phone, where a
+              // full-width row of shorter marks would otherwise crowd, and
+              // tighter at `lg` where the strip is only ~34vw across.
+              className="mr-10 h-[26px] w-auto object-contain lg:mr-[max(16px,1.5vw)] lg:h-[max(34px,2vw)]"
             />
           );
         })}
