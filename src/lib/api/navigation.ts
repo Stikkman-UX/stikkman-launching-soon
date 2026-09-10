@@ -8,6 +8,21 @@ import type {
 } from "./types";
 
 /**
+ * How long a prerendered page may keep serving the navigation it was built
+ * with. This has to be declared on the fetch itself, unlike every other
+ * public read: those run from a page, which can state its own `revalidate`,
+ * while this one runs from the root layout — and a layout has no say in the
+ * caching of the static routes it wraps. Left uncached, the nav is simply
+ * baked into `/` and `/coming-soon` at build time and an admin edit never
+ * appears until the next deploy, which is exactly the bug this fixes.
+ *
+ * A minute is the trade: the header stays on Next's static/ISR path (no
+ * per-request backend round trip, no dynamic rendering forced on every route
+ * in the app) and an edit made in the panel shows up within one.
+ */
+const NAVIGATION_REVALIDATE_SECONDS = 60;
+
+/**
  * Server-only, public: the whole Navigation document, every section
  * resolved. Used by both `layout.tsx` (top-bar nav + sectors dropdown +
  * menu overlay) and `Footer.tsx` (social links) — identical calls within
@@ -20,7 +35,9 @@ import type {
  * force those pages into fully dynamic rendering.
  */
 export async function getPublicNavigation(): Promise<NavigationPublicContent> {
-  return serverPublicFetch<NavigationPublicContent>("/api/navigation/public");
+  return serverPublicFetch<NavigationPublicContent>("/api/navigation/public", {
+    next: { revalidate: NAVIGATION_REVALIDATE_SECONDS },
+  });
 }
 
 /** Server-only, admin: the fixed 4-entry section summary for the hub page. */
