@@ -38,6 +38,25 @@
   --text-display--line-height: 1;
   --text-display--letter-spacing: -0.028em;
 
+  /* The `/coming-soon` holding page's statement and tile digits. Both carry
+     a `vh` term: that page is a flex column inside one `h-dvh` frame that
+     must never scroll, so on a short viewport (a 1366×650 laptop with
+     browser chrome, a phone in landscape) the type has to give way before
+     the layout does. At 1440×900 the vw term wins; below ~16:9 the vh term
+     takes over and the lines shrink together instead of pushing the form off
+     the bottom. Separate tokens rather than a change to `--text-hero`/
+     `--text-display`: the landing page (`/`) is laid out with absolute
+     blocks over a video and is tuned to the vw-only scale — it stays exactly
+     as drawn. The statement is a two-line centred sentence in mixed case, so
+     it sits a step larger and tighter than the landing's three-line caps. */
+  --text-hero-fit: max(34px, min(5.4vw, 9.6vh));
+  --text-hero-fit--line-height: 1.04;
+  --text-hero-fit--letter-spacing: -0.038em;
+
+  --text-display-fit: max(22px, min(2.1vw, 4vh));
+  --text-display-fit--line-height: 1;
+  --text-display-fit--letter-spacing: -0.028em;
+
   /* Body copy. */
   --text-body: max(14px, 1vw);
   --text-body--line-height: 1.7;
@@ -235,6 +254,30 @@
   }
 }
 
+/* The holding page's floating cards (`(ComingSoon)/components/FloatingCards`):
+   a slow vertical bob. Each card sets its own `animation-duration` inline so
+   the four never move in unison. Transform-only, so it stays on the
+   compositor, and off under `prefers-reduced-motion` — the cards are
+   decoration, they have nothing to say that needs to move. */
+@keyframes drift {
+  from {
+    transform: translateY(-5px);
+  }
+  to {
+    transform: translateY(5px);
+  }
+}
+
+.animate-drift {
+  animation: drift 7s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift {
+    animation: none;
+  }
+}
+
 .animate-fade-in-up {
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -304,6 +347,34 @@
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* The opposite intent, and the request modal's panel: its form runs past the
+   panel on a short viewport, so the scrollbar has to be visible — it is the
+   only thing saying the submit button is down there. Styled rather than left
+   to the OS, whose 19px default lands square-ended against a 16px rounded
+   corner and reads as a rendering fault. Firefox honours `scrollbar-width`/
+   `-color`; Chromium and WebKit take the pseudo-elements. */
+.slim-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(57 43 86 / 25%) transparent;
+}
+
+.slim-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.slim-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.slim-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(57 43 86 / 25%);
+  border-radius: 999px;
+}
+
+.slim-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(57 43 86 / 45%);
 }
 
 /* Starting state for any section that should fade/slide up into view.

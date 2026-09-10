@@ -1,12 +1,15 @@
-import ComingSoonSection from "@/app/(ComingSoon)/components/ComingSoonSection";
+import LandingSection from "@/app/(ComingSoon)/components/LandingSection";
 
 /**
- * The landing page is the Coming Soon frame again. The full Home page is
+ * The landing page: the brand hero's shell (video sphere, white scrims, meta
+ * bar) carrying the launch statement and countdown. The full Home page is
  * still built and still served — it moved to `/home` (see `home/page.tsx`)
  * rather than being deleted, so it stays reviewable while the site holds.
  *
- * Same composition as `/coming-soon`, which is kept as its own URL because
- * every unbuilt navigation destination points there (`COMING_SOON_HREF`).
+ * Deliberately not the same composition as `/coming-soon`: that is the
+ * holding page every unbuilt navigation destination lands on
+ * (`COMING_SOON_HREF`), and it has its own darker frame so a dead link reads
+ * as "not here yet" rather than bouncing back to the front door.
  * No metadata override here on purpose: the root layout's title and Open
  * Graph card are the ones that should describe the origin root when the URL
  * is shared. Footer-less for the reason spelled out in `/coming-soon`.
@@ -14,7 +17,7 @@ import ComingSoonSection from "@/app/(ComingSoon)/components/ComingSoonSection";
 export default function Home() {
   return (
     <main className="w-full overflow-x-clip">
-      <ComingSoonSection />
+      <LandingSection />
     </main>
   );
 }

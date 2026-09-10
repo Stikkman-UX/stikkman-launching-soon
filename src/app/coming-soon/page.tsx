@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 /**
  * One full-screen composition and nothing else — no Footer, deliberately. The
- * section is `h-dvh` and pins the countdown to the bottom-right corner, so
+ * section is `h-dvh` with the countdown strip along its bottom edge, so
  * anything after it would put a scrollbar on a page whose whole point is that
  * it is a single frame. Both of its CTAs open a request modal, so the
  * footer's contact form isn't the destination it used to be either.

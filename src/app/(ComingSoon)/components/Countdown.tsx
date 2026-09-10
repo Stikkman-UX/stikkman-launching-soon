@@ -31,6 +31,9 @@ const getServerSnapshot = () => null;
 // corner-of-the-screen secondary information, not a headline.
 const digitClassName = "no-text-trim font-mono text-display text-[#392B56]";
 
+const labelClassName =
+  "font-mono text-nano tracking-[0.172em] text-[#8A8781] uppercase";
+
 /**
  * Counts down to `LAUNCH_DATE`.
  *
@@ -41,8 +44,20 @@ const digitClassName = "no-text-trim font-mono text-display text-[#392B56]";
  * both render the same `--` placeholder and hydration matches. The
  * placeholder is the same markup with the digits swapped out, so nothing
  * reflows when the first real tick lands.
+ *
+ * Two layouts over the same clock:
+ *
+ * - `inline` (default) — digits in a row with `:` between them, the landing
+ *   page's bottom-right corner block;
+ * - `tiles` — each unit in its own small card, the holding page's centred
+ *   widget. Its digits use `text-display-fit`, the height-capped size, since
+ *   that page is one `h-dvh` frame that must never scroll.
  */
-export default function Countdown() {
+export default function Countdown({
+  variant = "inline",
+}: {
+  variant?: "inline" | "tiles";
+}) {
   const totalSeconds = useSyncExternalStore<number | null>(
     subscribe,
     getRemainingSeconds,
@@ -59,6 +74,41 @@ export default function Countdown() {
     units === null
       ? "Counting down to launch on 14 September 2026."
       : `Launching in ${Number(units.days)} days, ${Number(units.hours)} hours, ${Number(units.minutes)} minutes and ${Number(units.seconds)} seconds.`;
+
+  const digit = (key: keyof Units) => (units === null ? "--" : units[key]);
+
+  if (variant === "tiles") {
+    return (
+      <div>
+        <p className="sr-only">{label}</p>
+
+        <div aria-hidden="true" className="flex items-center gap-[max(6px,0.55vw)]">
+          {LABELS.map((unit, i) => (
+            <Fragment key={unit.key}>
+              {/* Hidden on a phone, where four tiles already fill the width. */}
+              {i > 0 && (
+                <p className="no-text-trim hidden font-mono text-display-fit text-[#392B5640] sm:block">
+                  :
+                </p>
+              )}
+              <div className="flex w-[max(66px,5.8vw)] flex-col items-center gap-[max(4px,0.5vh)] rounded-2xl border border-[#392B5614] bg-white/85 px-1 py-[max(10px,1.4vh)] shadow-[0_14px_32px_-20px_rgba(57,43,86,0.45)] backdrop-blur-sm">
+                {/* Optical alignment is meaningless on monospace numerals —
+                    their bearings are symmetric by construction — and the
+                    shift would fight the centering. */}
+                <p
+                  data-optical="off"
+                  className="no-text-trim font-mono text-display-fit text-[#392B56]"
+                >
+                  {digit(unit.key)}
+                </p>
+                <p className={labelClassName}>{unit.label}</p>
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -83,11 +133,9 @@ export default function Countdown() {
                   bearings are symmetric by construction — and the shift would
                   fight the centering above. */}
               <p data-optical="off" className={digitClassName}>
-                {units === null ? "--" : units[unit.key]}
+                {digit(unit.key)}
               </p>
-              <p className="font-mono text-nano tracking-[0.172em] text-[#8A8781] uppercase">
-                {unit.label}
-              </p>
+              <p className={labelClassName}>{unit.label}</p>
             </div>
           </Fragment>
         ))}

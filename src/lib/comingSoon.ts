@@ -5,8 +5,9 @@
  * and `app/not-found.tsx` renders the same page for any URL that slips
  * through (e.g. a CMS-authored case-study href).
  *
- * `/` renders that same page while the site holds; the Home page it used to
- * serve is still built and now lives at `HOME_HREF`.
+ * `/` is the landing frame (`LandingSection` — the brand hero shell with the
+ * launch statement) and is a different composition from this holding page;
+ * the Home page it used to serve is still built and now lives at `HOME_HREF`.
  */
 export const COMING_SOON_HREF = "/coming-soon";
 

@@ -12,6 +12,47 @@
  */
 export const LAUNCH_DATE = new Date("2026-09-14T00:00:00+05:30");
 
+/**
+ * The same instant as a label, pinned to IST so the server and the client
+ * print the identical string (a `toLocaleDateString()` in the viewer's zone
+ * could roll it to the 13th west of Greenwich and fail hydration).
+ */
+export const launchDateLabel = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "Asia/Kolkata",
+}).format(LAUNCH_DATE);
+
+// --- `/coming-soon` holding page ---------------------------------------------
+//
+// Its own copy, deliberately unlike the landing page's hero statement: this is
+// where an unbuilt link lands, and it should read as "not here yet", not as
+// the front door again.
+
+/** Two lines; the second is set in the accent colour. */
+export const holdingHeading = ["A new experience", "is taking shape."] as const;
+
+/** The line under the headline — what a visitor can do while the site holds. */
+export const intro =
+  "We're putting the finishing touches on the next chapter of Stikkman UX. Until it lands, the studio deck is one email away.";
+
+/** Under the inline deck form. */
+export const deckNote = "No spam. One email with the deck, and nothing else.";
+
+/**
+ * The small tilted cards floating at the corners of the holding page — the
+ * studio's numbers as at-a-glance widgets. Every figure here is one the site
+ * already states elsewhere (the meta bar, the SEO description), restated
+ * rather than invented.
+ */
+export const floatingCards = {
+  lives: { label: "Lives touched", value: "100M+", tag: "To date" },
+  clients: { label: "Client org. value", value: "$20B", tag: "Portfolio" },
+  studios: { label: "Studios", value: "BLR · NYC · DXB", tag: "3 cities" },
+  site: { label: "New website", value: "In the works", tag: "Launching" },
+} as const;
+
 export type HeadingLine = {
   text: string;
   highlight?: boolean;
