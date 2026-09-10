@@ -23,7 +23,10 @@ const info: {
     value: "hello@stikkmanux.com",
     href: "mailto:hello@stikkmanux.com",
   },
-  { label: "We Work", value: "Cinnabar Hills, Embassy Golf Links Business Park." },
+  {
+    label: "Studio",
+    value: "WeWork, Cinnabar Hills, Embassy Golf Links Business Park.",
+  },
   { label: "Social", social: true },
   { label: "Status", value: "Booking Q3 2026", dot: true, right: true },
 ];
