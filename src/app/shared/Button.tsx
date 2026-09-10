@@ -17,6 +17,17 @@ type ButtonProps = {
    * navigating. Implied by `href="#contact"` — see `isContactCta` below.
    */
   contactCta?: boolean;
+  /**
+   * Navigates with a plain `<a>` — a full document load — instead of
+   * `next/link`'s client-side transition. Ignored without an `href`.
+   *
+   * The reason to want one: the header's intro splash runs from a mount-time
+   * effect and the header lives in the root layout, so a client-side
+   * navigation keeps it mounted and the animation never replays (same as the
+   * wordmark in `shared/Header.tsx`, which is a bare `<a>` for exactly this).
+   * A button that sends someone back to the landing page wants that splash.
+   */
+  hardNavigate?: boolean;
 };
 
 function ArrowIcon() {
@@ -117,6 +128,7 @@ function renderButton(colorClassName: string, sweepVariant: "light" | "dark", {
   withoutIcon = false,
   loading = false,
   contactCta = false,
+  hardNavigate = false,
 }: ButtonProps) {
   const sharedClassName = `group relative overflow-hidden cursor-pointer inline-flex w-fit items-center justify-center gap-2 rounded-full px-6 py-3 h-11 text-xs transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${colorClassName}`;
 
@@ -131,18 +143,23 @@ function renderButton(colorClassName: string, sweepVariant: "light" | "dark", {
   const isContactCta = contactCta || href === CONTACT_HREF;
 
   if (href && !disabled && !loading && !isContactCta) {
+    const overlayProps = {
+      onClick,
+      "aria-label": text,
+      className: "absolute inset-0 z-10 rounded-full",
+    };
+
     // The Link overlay sits above the button (z-10 vs z-0) and captures all
     // pointer events, so the button itself never receives a real :hover —
     // the sweep must key off this wrapping span (named `group/sweep` so it
     // isn't shadowed by the button's own closer, but inert, `group`).
     return (
       <span className={`relative inline-flex group/sweep ${className}`}>
-        <Link
-          href={href}
-          onClick={onClick}
-          aria-label={text}
-          className="absolute inset-0 z-10 rounded-full"
-        />
+        {hardNavigate ? (
+          <a href={href} {...overlayProps} />
+        ) : (
+          <Link href={href} {...overlayProps} />
+        )}
         <button
           type="button"
           aria-hidden="true"
