@@ -389,6 +389,9 @@ export default function ContactRequestForm({
             <div
               role="listbox"
               aria-multiselectable="true"
+              // Same Lenis opt-out as the modal panel it sits inside — this
+              // list scrolls too once the service options overflow it.
+              data-lenis-prevent
               className="no-scrollbar absolute inset-x-0 top-full z-20 mt-[0.57em] max-h-[20.5em] overflow-y-auto rounded-lg border border-[#392B561F] bg-white p-[0.57em] shadow-lg"
             >
               {SERVICES.map((service) => {
@@ -435,7 +438,10 @@ export default function ContactRequestForm({
           <textarea
             name="message"
             placeholder="/ Tell us about your project"
-            rows={4}
+            // 3, not the main site's 4: this panel has to fit one screen
+            // alongside five other fields and the submit row, and the field
+            // scrolls once it's full anyway.
+            rows={3}
             value={message}
             disabled={isSubmitting}
             onChange={(event) =>

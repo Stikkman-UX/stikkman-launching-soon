@@ -7,20 +7,10 @@ import { ButtonBlue } from "@/app/shared/Button";
 import ContactRequestForm from "@/app/(ComingSoon)/components/ContactRequestForm";
 import { useEscapeKey } from "@/lib/hooks/useEscapeKey";
 import { SHEET_HEADERS, submitToSheet } from "@/lib/formSubmission";
+import { validateEmail } from "@/lib/email";
 import { contactEmail, type RequestCta } from "@/app/(ComingSoon)/data/landing";
 
-// The same pattern the main site's contact forms validate against, kept
-// identical so an address accepted here is accepted there too.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const SUCCESS_DURATION_MS = 4000;
-
-function validateEmail(value: string): string | undefined {
-  const trimmed = value.trim();
-  if (trimmed === "") return "Email is required";
-  if (!EMAIL_PATTERN.test(trimmed)) return "Enter a valid email address";
-  return undefined;
-}
 
 /** Same field treatment as the contact panel's, minus its error helper. */
 function emailPanelFieldClassName(hasError: boolean) {
@@ -53,7 +43,13 @@ function ModalShell({
   children: ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-gutter">
+    // The extra bottom padding is the header's collapsed bar. This wrapper's
+    // `z-[120]` doesn't actually beat the header's `z-50`: `SmoothScroll`
+    // (Lenis) puts a transform on an ancestor, which makes a stacking context
+    // the modal can't escape — so the bar paints over the panel's bottom edge
+    // and no z-index here can fix it. Centring in the space *above* the bar
+    // is what keeps the whole panel visible, submit row included.
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-gutter pb-[calc(var(--spacing-gutter)+var(--spacing-bar))]">
       <div
         aria-hidden="true"
         onMouseDown={onClose}
@@ -64,7 +60,18 @@ function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`animate-fade-in-up no-scrollbar relative max-h-full w-full overflow-y-auto rounded-2xl border border-[#392B561F] bg-white p-fluid-md ${maxWidthClassName}`}
+        // Lenis (`shared/SmoothScroll.tsx`) intercepts every wheel event on
+        // the document and animates the *page* scroll with it, so a wheel
+        // over this panel did nothing at all — the only way down was dragging
+        // the scrollbar. This attribute is Lenis's opt-out: events whose
+        // composed path contains it are left to the browser, which scrolls
+        // the panel natively.
+        data-lenis-prevent
+        // Deliberately *not* `no-scrollbar`: on a short viewport the form is
+        // taller than the panel, and with the bar hidden there was nothing to
+        // say so — the submit row simply looked cut off. The scrollbar is the
+        // affordance that makes the overflow legible.
+        className={`animate-fade-in-up slim-scrollbar relative max-h-full w-full overflow-y-auto rounded-2xl border border-[#392B561F] bg-white p-fluid-md ${maxWidthClassName}`}
       >
         <button
           type="button"
