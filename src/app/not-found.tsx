@@ -1,7 +1,8 @@
 import ComingSoonSection from "@/app/(ComingSoon)/components/ComingSoonSection";
 
 /**
- * Only the Home page is built on this site, so a URL that doesn't resolve is
+ * Only the Home page is built on this site (at `/home` — `/` holds the same
+ * Coming Soon frame this renders), so a URL that doesn't resolve is
  * almost always a page that simply isn't here yet (a CMS-authored
  * `/work/[slug]` href, say) rather than a genuine mistake — it gets the same
  * Coming Soon treatment as the links that point there deliberately.

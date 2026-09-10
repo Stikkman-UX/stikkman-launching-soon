@@ -4,15 +4,21 @@
  * here. Those links point at `/coming-soon` instead of a dead `#` or a 404,
  * and `app/not-found.tsx` renders the same page for any URL that slips
  * through (e.g. a CMS-authored case-study href).
+ *
+ * `/` renders that same page while the site holds; the Home page it used to
+ * serve is still built and now lives at `HOME_HREF`.
  */
 export const COMING_SOON_HREF = "/coming-soon";
+
+/** Where the full Home page is served from while `/` holds the Coming Soon frame. */
+export const HOME_HREF = "/home";
 
 /**
  * The paths this site actually serves. Everything else in the navigation is
  * a real page of the *full* site (`/work-innovation`, `/about`, `/services`,
  * …) that simply doesn't exist here.
  */
-const BUILT_ROUTES = new Set(["/", COMING_SOON_HREF]);
+const BUILT_ROUTES = new Set(["/", HOME_HREF, COMING_SOON_HREF]);
 
 /**
  * Sends one CMS-authored navigation href to `/coming-soon` unless this site
