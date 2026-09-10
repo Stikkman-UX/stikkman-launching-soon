@@ -102,6 +102,38 @@ export const services = [
  */
 export const heroRotatingWords = [HERO_FOCUS, ...services];
 
+/**
+ * The client logos in the landing hero's carousel.
+ *
+ * The files live in `public/logo carousel/` — the space is why every `src`
+ * below is written with `%20`. A browser would encode it anyway, but spelling
+ * it out means the string in the markup is the string that gets requested,
+ * which is one less thing to wonder about if a host ever serves this
+ * directory differently.
+ *
+ * `name` is the image's alt text, so it wants the brand as a person would
+ * read it aloud. Adding a logo is a file plus a line here — nothing in
+ * `LogoCarousel` has to change. Every one is drawn at a single fixed height
+ * with `w-auto`, so mixed aspect ratios line up; what does matter is that a
+ * file's artwork fills its own box (no baked-in padding), or that mark will
+ * look smaller than its neighbours at the same height.
+ */
+export const heroLogos: { name: string; src: string }[] = [
+  { name: "Garuda Aerospace", src: "/logo%20carousel/logo1.png" },
+  { name: "InsuranceDekho", src: "/logo%20carousel/logo2.png" },
+  { name: "BBT", src: "/logo%20carousel/logo3.png" },
+  { name: "Dowell's", src: "/logo%20carousel/logo4.png" },
+  // The only mark I couldn't read with confidence — a square icon with no
+  // wordmark. Correct the name and the alt text is fixed.
+  { name: "Client logo", src: "/logo%20carousel/logo5.png" },
+  { name: "SFC", src: "/logo%20carousel/logo6.png" },
+  { name: "Bharat Parenterals Limited", src: "/logo%20carousel/logo7.png" },
+  { name: "Apothecon", src: "/logo%20carousel/logo8.png" },
+  { name: "Ratnaafin", src: "/logo%20carousel/logo9.png" },
+  { name: "Asian Cables", src: "/logo%20carousel/logo10.png" },
+  { name: "PhillipCapital", src: "/logo%20carousel/logo11.png" },
+];
+
 export const topBar = {
   left: "Client Org. Value $20 Billion",
   center: "BLR . NYC . DXB",

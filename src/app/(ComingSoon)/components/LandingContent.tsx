@@ -6,6 +6,7 @@ import FluidContainer from "@/app/(ComingSoon)/components/FluidContainer";
 import HighlightMark from "@/app/shared/HighlightMark";
 import { ButtonBlue, ButtonWhite } from "@/app/shared/Button";
 import Countdown from "@/app/(ComingSoon)/components/Countdown";
+import LogoCarousel from "@/app/(ComingSoon)/components/LogoCarousel";
 import RequestModal from "@/app/(ComingSoon)/components/RequestModal";
 import { CONTACT_HREF } from "@/lib/contactCta";
 import {
@@ -182,11 +183,13 @@ export default function LandingContent() {
       {/* `items-center` centres this column on the vertical axis only; the
           column itself stays on the grid's left edge.
 
-          No padding on this box at all: it is `inset-0`, so any `pb` here
-          offsets the centring by half its value and the column sits visibly
-          high of the middle — which the top meta bar makes obvious, since it
-          gives the eye a fixed reference at the top edge. */}
-      <FluidContainer className="absolute inset-0 z-10 flex items-center">
+          The `pb` is what lifts it clear of the logo strip. This box is
+          `inset-0`, so padding at the bottom offsets the centring by half its
+          value — normally the reason not to put any here, and exactly the
+          mechanism wanted now that the bottom-left corner is occupied. It is
+          the same expression the bottom row uses for its own offset, so the
+          two move together: change one and the gap between them holds. */}
+      <FluidContainer className="absolute inset-0 z-10 flex items-center pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
         <div>
           {/* No width cap on the heading, deliberately. The rotator words are
               `whitespace-nowrap` — they have to be, or a long one would wrap
@@ -244,15 +247,15 @@ export default function LandingContent() {
             ref={(el) => {
               tailRefs.current[0] = el;
             }}
-            className="mt-fluid-md flex flex-wrap items-center opacity-0"
+            className="mt-fluid-sm flex flex-wrap items-center opacity-0"
           >
             {/* Fluid like everything else in this column, or the label holds
-                16px while the heading above it grows with the viewport and
-                the line all but vanishes on a large display. The numbers are
-                the ones it already had at 1440px: `mt-fluid-md` is that
-                `mt-10` (40px), and 1.11vw is that `text-base` (16px), with a
-                14px floor so it stays legible at the 360px viewport floor. */}
-            <span className="text-[max(14px,1.11vw)] text-[#392B56E5]">
+                its size while the heading above it grows with the viewport
+                and the line all but vanishes on a large display. Stepped
+                down with the headline to make room for the logo strip below,
+                keeping a 12px floor so it stays legible at the 360px
+                viewport floor. */}
+            <span className="text-[max(12px,0.95vw)] text-[#392B56E5]">
               Experience Launching Soon
             </span>
           </div>
@@ -267,6 +270,11 @@ export default function LandingContent() {
                 any size, rather than growing narrower in proportion as the
                 type scales up. */}
 
+            {/* Left at the site's own button size (`h-11 px-6` in
+                `shared/Button.tsx`) on purpose — the headline and the launch
+                line above them came down to make room for the logo strip, but
+                these did not. The CTAs are the one thing on this page a
+                visitor is meant to hit. */}
             <div className="mt-stack flex flex-wrap items-center gap-fluid-xs">
               <ButtonBlue
                 text={requestCtas.deck.label}
@@ -281,15 +289,40 @@ export default function LandingContent() {
         </div>
       </FluidContainer>
 
-      {/* Bottom-right corner. `pointer-events-none` because this box spans the
-          full width and would otherwise sit over the CTA buttons and swallow
-          their clicks — nothing in here is interactive. */}
-      <FluidContainer className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-end pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
+      {/* The bottom row: logo strip left, countdown right. `pointer-events-none`
+          because this box spans the full width and would otherwise sit over
+          the CTA buttons and swallow their clicks — nothing in here is
+          interactive.
+
+          `items-end` is what "aligned with the timer" means here: both blocks
+          are an eyebrow over their content, and bottom-aligning them puts the
+          logos on the countdown's own baseline rather than floating them
+          somewhere near it.
+
+          The countdown keeps `ml-auto` rather than the row using
+          `justify-between`: below `lg` the strip is gone, and with one child
+          `justify-between` would park the countdown on the *left*. */}
+      <FluidContainer className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end gap-fluid-md pb-[calc(var(--spacing-bar)+var(--spacing-fluid-md))]">
+        {/* Hidden below `lg`: at 390px the countdown alone takes most of the
+            row, and what was left would be too narrow for a logo to read.
+
+            No eyebrow over it, unlike the countdown: the CTA row sits
+            directly above this corner, and a label here lands close enough to
+            the buttons to read as part of them. The logos say what they are. */}
+        <div
+          ref={(el) => {
+            tailRefs.current[3] = el;
+          }}
+          className="hidden w-[34vw] opacity-0 lg:block"
+        >
+          <LogoCarousel />
+        </div>
+
         <div
           ref={(el) => {
             tailRefs.current[2] = el;
           }}
-          className="flex flex-col items-end gap-fluid-sm opacity-0"
+          className="ml-auto flex flex-col items-end gap-fluid-sm opacity-0"
         >
           <HighlightMark
             text={eyebrow}

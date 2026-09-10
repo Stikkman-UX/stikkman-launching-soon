@@ -25,12 +25,17 @@
 @theme {
   /* Type ------------------------------------------------------------------ */
 
-  /* h1. The 26px floor is what keeps the longest line (DIGITAL EXPERIENCE,
-     18 characters) inside the 328px of content space left at the 360px
-     viewport floor — the mask that reveals it is `overflow-hidden`, so an
-     overrun would be clipped rather than scrolled. */
-  --text-hero: max(26px, 4.8vw);
-  --text-hero--line-height: max(30px, 5vw);
+  /* h1. The floor is what keeps the longest line (DIGITAL EXPERIENCE, 18
+     characters) inside the 328px of content space left at the 360px viewport
+     floor — the mask that reveals it is `overflow-hidden`, so an overrun
+     would be clipped rather than scrolled.
+
+     Stepped down from 4.8vw/5vw once the logo strip moved into the hero's
+     bottom-left corner: the statement and the strip share one screen that
+     never scrolls, so the headline giving up a few vw is what buys the
+     logos room to breathe. */
+  --text-hero: max(24px, 4.15vw);
+  --text-hero--line-height: max(28px, 4.35vw);
   --text-hero--letter-spacing: -0.031em;
 
   /* Countdown digits. */
@@ -217,6 +222,27 @@
 
 .animate-marquee {
   animation: marquee 16s linear infinite;
+}
+
+/* The landing hero's client-logo strip. Its own class rather than
+   `.animate-marquee` so it can run at its own pace and stop under
+   `prefers-reduced-motion` without changing the Design DNA strip that class
+   already drives. Same `marquee` keyframes: see
+   `(ComingSoon)/components/LogoCarousel.tsx` for why -50% is exactly one
+   period there.
+
+   The duration is a lap of the whole list, not a speed, so it has to be
+   re-tuned whenever logos are added or removed — 11 logos at ~1170px a lap
+   makes this about 42px/sec, which is a readable walking pace. Halve the
+   list and this same 28s would crawl. */
+.animate-logo-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-logo-marquee {
+    animation: none;
+  }
 }
 
 /* Same loop as `.animate-marquee`, but pauses on hover — used by the About
