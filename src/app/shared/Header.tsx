@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
@@ -16,6 +16,23 @@ import { useCaseStudyHeaderInfo } from "./CaseStudyHeaderContext";
 import { COMING_SOON_HREF } from "@/lib/comingSoon";
 
 gsap.registerPlugin(ScrollTrigger);
+
+// The "start a project" wing, straight from the Figma export. Drawn once by
+// the <svg> in the markup and reused as the CSS clip for the backdrop blur
+// behind it: the path is authored in the svg's 216×36 viewBox, which renders
+// at 1:1, so the same numbers are valid px inside `clip-path: path()`. It
+// runs on to y=58.5, taller than the 36px box — the box itself crops the rest.
+const CTA_SHAPE_PATH =
+  "M38.4443 0.5H175.888C185.253 0.500075 192.469 5.43037 198.438 12.5518C204.415 19.6834 209.091 28.9519 213.383 37.5176C214.885 40.5158 215.443 45.8285 214.743 50.4111C214.394 52.6962 213.739 54.7464 212.775 56.2109C211.818 57.6652 210.591 58.5 209.063 58.5H7.46191C5.56882 58.4999 4.11763 57.6411 3.02832 56.2002C1.92605 54.7421 1.19829 52.6877 0.817383 50.3516C0.0549948 45.6756 0.712872 40.0568 2.29102 36.335C5.93282 27.7463 10.3917 18.7705 16.2461 11.9463C22.0935 5.13024 29.2967 0.5 38.4443 0.5Z";
+
+// Both the prefixed and unprefixed backdrop-filter on purpose: Safari only
+// dropped the `-webkit-` requirement in 18, and older iPhones stay on older
+// Safaris.
+const CTA_BLUR_STYLE: CSSProperties = {
+  clipPath: `path("${CTA_SHAPE_PATH}")`,
+  backdropFilter: "blur(16.6px)",
+  WebkitBackdropFilter: "blur(16.6px)",
+};
 
 export default function Header({
   topBarLinks,
@@ -125,6 +142,20 @@ export default function Header({
     const finalCenterY = lockupRect.top + lockupRect.height / 2;
     const initialY = window.innerHeight / 2 - finalCenterY;
     gsap.set(targets, { y: initialY });
+    // The lockup ships as `opacity-0` in the markup, so neither the
+    // server-rendered frame nor any frame before hydration lands ever
+    // paints the logo sitting at its resting spot in the bottom-left, only
+    // to have it jump to the viewport center once this effect runs.
+    // Revealing it here, in the same synchronous task as the `y` set above,
+    // means the very first frame it is drawn in is already the centred one.
+    // An inline style rather than React state on purpose: this header lives
+    // in the root layout, so a client-side navigation keeps it mounted and
+    // never re-runs this effect (the very reason the wordmark below is a
+    // plain <a>). The inline `opacity: 1` then outlives every later
+    // re-render — React never manages this element's `style`, and it never
+    // rewrites an unchanged `className` — so a route change that re-renders
+    // the header without replaying the intro can't hide the logo again.
+    gsap.set(lockup, { opacity: 1 });
 
     const tl = gsap.timeline({
       delay: 0.3,
@@ -336,7 +367,12 @@ export default function Header({
           pointer-events never affects keyboard focus, so the link stays fully
           operable. Each character is hidden with `visibility` rather than
           plain opacity (see the tween above), which is what takes it out of
-          hit-testing as it fades. */}
+          hit-testing as it fades.
+
+          `opacity-0` is the pre-hydration state only: the intro effect above
+          lifts it (inline) the instant it has positioned the logo, so the
+          logo is never seen at this resting spot before it has dropped
+          into it. */}
       {/* A plain <a>, deliberately not next/link. The intro splash runs from
           a mount-time effect on this component, and the header lives in the
           root layout — so a client-side navigation keeps it mounted and the
@@ -348,7 +384,7 @@ export default function Header({
       <a
         href="/"
         ref={lockupRef}
-        className="pointer-events-none absolute bottom-3.75 left-6 flex items-center gap-3 lg:left-14"
+        className="pointer-events-none absolute bottom-3.75 left-6 flex items-center gap-3 opacity-0 lg:left-14"
       >
         <img
           ref={logoRef}
@@ -531,70 +567,64 @@ export default function Header({
           The shape is wrapped in a real <button> rather than left as a bare
           `cursor-pointer` <svg>: it's the site's primary CTA, so it has to be
           reachable by keyboard and announced as a control. Positioning, the
-          GSAP ref and the hover `group` all live on the button now — the svg
-          is purely the drawing. `data-contact-cta` is what opts it into the
-          scroll-to-form behaviour (see `lib/contactCta.ts`). */}
+          GSAP ref and the hover `group` all live on the button — the svg is
+          purely the drawing, and the button takes its 216×36 size from it.
+          `data-contact-cta` is what opts it into the scroll-to-form
+          behaviour (see `lib/contactCta.ts`).
+
+          The label and the backdrop blur are plain HTML siblings layered
+          under/over the svg — deliberately *not* `<foreignObject>`s inside
+          it, which is how the Figma export had them. foreignObject is the
+          one piece of SVG that mobile WebKit (and older Android WebViews)
+          still get wrong: its HTML content lives in a separate render tree,
+          and once an ancestor picks up a transform, a `visibility` flip or
+          its own compositing layer — exactly what GSAP's autoAlpha/y scrub
+          on this button does — that content can be drawn offset, clipped,
+          or not at all, on some devices, some of the time. Real DOM text has
+          none of that. */}
       <button
         ref={ctaRef}
         type="button"
         data-contact-cta
-        aria-label="Start a project"
-        className="group inline-block invisible absolute -z-10 bottom-full left-1/2 -translate-x-1/2 opacity-0 cursor-pointer "
+        className="group invisible absolute -z-10 bottom-full left-1/2 -translate-x-1/2 cursor-pointer opacity-0"
       >
-      <svg
-        width="216"
-        height="36"
-        viewBox="0 0 216 36"
-        fill="none"
-        className="block"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* Figma exports a `data-figma-bg-blur-radius` hint plus this
-            clipPath but never wires up an actual blur — CSS `backdrop-filter`
-            (via a foreignObject) is the only thing that genuinely samples the
-            real pixels behind the shape; an SVG filter can't. Offset by
-            -16.6 (the blur radius) and shifted back by the clipPath's own
-            translate so the clipped shape still lines up with the visible
-            path below, with enough margin that the blur doesn't get a hard
-            edge at the shape's boundary. */}
-        <foreignObject x="-16.6" y="-16.6" width="249.2" height="91.7">
-          <div
-            className="h-full w-full"
-            style={{
-              clipPath: "url(#bgblur_0_189_4209_clip_path)",
-              backdropFilter: "blur(16.6px)",
-              WebkitBackdropFilter: "blur(16.6px)",
-            }}
-          />
-        </foreignObject>
-
-        <path
-          d="M38.4443 0.5H175.888C185.253 0.500075 192.469 5.43037 198.438 12.5518C204.415 19.6834 209.091 28.9519 213.383 37.5176C214.885 40.5158 215.443 45.8285 214.743 50.4111C214.394 52.6962 213.739 54.7464 212.775 56.2109C211.818 57.6652 210.591 58.5 209.063 58.5H7.46191C5.56882 58.4999 4.11763 57.6411 3.02832 56.2002C1.92605 54.7421 1.19829 52.6877 0.817383 50.3516C0.0549948 45.6756 0.712872 40.0568 2.29102 36.335C5.93282 27.7463 10.3917 18.7705 16.2461 11.9463C22.0935 5.13024 29.2967 0.5 38.4443 0.5Z"
-          fill="#4B4B4B69"
-          fillOpacity="0.9"
-          stroke="white"
-          className="transition-colors duration-300 group-hover:fill-[#392B56]"
+        {/* Figma exports a `data-figma-bg-blur-radius` hint plus a clipPath
+            but never wires up an actual blur — CSS `backdrop-filter` is the
+            only thing that genuinely samples the real pixels behind the
+            shape; an SVG filter can't. Sits below the svg in paint order
+            (every child here is positioned with z-index auto, so DOM order
+            wins), so the fill and the crisp white stroke lie on top of the
+            blur instead of being smeared by it. */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={CTA_BLUR_STYLE}
         />
-        <defs>
-          <clipPath
-            id="bgblur_0_189_4209_clip_path"
-            transform="translate(16.6 16.6)"
-          >
-            <path d="M38.4443 0.5H175.888C185.253 0.500075 192.469 5.43037 198.438 12.5518C204.415 19.6834 209.091 28.9519 213.383 37.5176C214.885 40.5158 215.443 45.8285 214.743 50.4111C214.394 52.6962 213.739 54.7464 212.775 56.2109C211.818 57.6652 210.591 58.5 209.063 58.5H7.46191C5.56882 58.4999 4.11763 57.6411 3.02832 56.2002C1.92605 54.7421 1.19829 52.6877 0.817383 50.3516C0.0549948 45.6756 0.712872 40.0568 2.29102 36.335C5.93282 27.7463 10.3917 18.7705 16.2461 11.9463C22.0935 5.13024 29.2967 0.5 38.4443 0.5Z" />
-          </clipPath>
-        </defs>
 
-        {/* Sized to the visible viewBox (not the path's own, taller
-            coordinate space, part of which is clipped) so the text centers
-            on what's actually on screen. */}
-        <foreignObject x="0" y="0" width="216" height="36">
-          <div className="flex h-full w-full items-center justify-center">
-            <span className="font-mono text-xs uppercase tracking-[1.84px] text-white">
-              Start a project
-            </span>
-          </div>
-        </foreignObject>
-      </svg>
+        <svg
+          width="216"
+          height="36"
+          viewBox="0 0 216 36"
+          fill="none"
+          className="relative block"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d={CTA_SHAPE_PATH}
+            fill="#4B4B4B69"
+            fillOpacity="0.9"
+            stroke="white"
+            className="transition-colors duration-300 group-hover:fill-[#392B56]"
+          />
+        </svg>
+
+        {/* Centred on the 36px box the button actually occupies, not the
+            path's own taller coordinate space (part of which is cropped).
+            Being real text inside the button, this is also what names it
+            for assistive tech — no aria-label needed any more. */}
+        <span className="absolute inset-0 flex items-center justify-center font-mono text-xs uppercase tracking-[1.84px] text-white">
+          Start a project
+        </span>
       </button>
     </header>
   );
