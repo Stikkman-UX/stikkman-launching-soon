@@ -36,9 +36,12 @@ const FADE =
 
 /**
  * A lap of the whole list, not a speed, so it has to be re-tuned whenever
- * logos are added or removed — 11 logos at ~1300px a lap on a phone makes
- * this about 46px/sec, which is a readable walking pace. Halve the list and
- * this same 28s would crawl.
+ * logos are added or removed — or the spacing below changes, or a mark is
+ * swapped for a file with a different aspect ratio. All three are just the
+ * track getting longer or shorter, which is the whole of what a lap is.
+ * These 11 run ~1390px on a phone and ~1630px on a 1440px display, so this
+ * 28s reads as roughly 50px/sec and 58px/sec, both a readable walking pace.
+ * Halve the list and this same 28s would crawl.
  */
 const LAP_SECONDS = 28;
 
@@ -71,10 +74,14 @@ export default function LogoCarousel({ className = "" }: { className?: string })
               // takes over, and its floor is what keeps the marks legible on
               // a laptop rather than scaling them down with the viewport.
               //
-              // Spacing runs the other way: widest on a phone, where a
-              // full-width row of shorter marks would otherwise crowd, and
-              // tighter at `lg` where the strip is only ~34vw across.
-              className="mr-10 h-[26px] w-auto object-contain lg:mr-[max(16px,1.5vw)] lg:h-[max(34px,2vw)]"
+              // Spacing is authored per breakpoint rather than scaled from
+              // one value. A phone gets a flat 40px, which is what keeps a
+              // full-width row of shorter marks from crowding. From `lg` it
+              // goes fluid so the gaps grow with the marks either side of
+              // them instead of closing up on a large display, and its 28px
+              // floor is the value tuned for the desktop corner, where the
+              // strip is only ~34vw across.
+              className="mr-10 h-[26px] w-auto object-contain lg:mr-[max(28px,2.5vw)] lg:h-[max(34px,2vw)]"
             />
           );
         })}

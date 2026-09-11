@@ -117,20 +117,32 @@ export const heroRotatingWords = [HERO_FOCUS, ...services];
  * with `w-auto`, so mixed aspect ratios line up; what does matter is that a
  * file's artwork fills its own box (no baked-in padding), or that mark will
  * look smaller than its neighbours at the same height.
+ *
+ * The marks are `.svg`, which is how the brand files were delivered — but
+ * they are Figma exports, and a Figma export of a placed bitmap is a single
+ * `<image>` of base64 PNG inside a `<pattern>`, not vector art. So they do
+ * scale to any pixel density (the embedded bitmaps run up to 4096px wide
+ * against a ~30px render, where the old PNGs were 40px tall and went soft on
+ * a retina phone) while costing what a bitmap costs: ~3.3MB across the set,
+ * against ~80KB for the `.png` copies still sitting beside them. If this
+ * strip ever has to get lighter, the fix is to re-export each mark as a 2x
+ * PNG, not to hand-optimise these.
  */
 export const heroLogos: { name: string; src: string }[] = [
-  { name: "Garuda Aerospace", src: "/logo%20carousel/logo1.png" },
-  { name: "InsuranceDekho", src: "/logo%20carousel/logo2.png" },
-  { name: "BBT", src: "/logo%20carousel/logo3.png" },
-  { name: "Dowell's", src: "/logo%20carousel/logo4.png" },
+  { name: "Garuda Aerospace", src: "/logo%20carousel/logo1.svg" },
+  { name: "InsuranceDekho", src: "/logo%20carousel/logo2.svg" },
+  { name: "BBT", src: "/logo%20carousel/logo3.svg" },
+  { name: "Dowell's", src: "/logo%20carousel/logo4.svg" },
   // The only mark I couldn't read with confidence — a square icon with no
   // wordmark. Correct the name and the alt text is fixed.
-  { name: "Client logo", src: "/logo%20carousel/logo5.png" },
-  { name: "SFC", src: "/logo%20carousel/logo6.png" },
-  { name: "Bharat Parenterals Limited", src: "/logo%20carousel/logo7.png" },
-  { name: "Apothecon", src: "/logo%20carousel/logo8.png" },
-  { name: "Ratnaafin", src: "/logo%20carousel/logo9.png" },
-  { name: "Asian Cables", src: "/logo%20carousel/logo10.png" },
+  { name: "Client logo", src: "/logo%20carousel/logo5.svg" },
+  { name: "SFC", src: "/logo%20carousel/logo6.svg" },
+  { name: "Bharat Parenterals Limited", src: "/logo%20carousel/logo7.svg" },
+  { name: "Apothecon", src: "/logo%20carousel/logo8.svg" },
+  { name: "Ratnaafin", src: "/logo%20carousel/logo9.svg" },
+  { name: "Asian Cables", src: "/logo%20carousel/logo10.svg" },
+  // The one mark delivered without an `.svg`, so it stays on its PNG. Drop a
+  // `logo11.svg` in beside the others and this line can match them.
   { name: "PhillipCapital", src: "/logo%20carousel/logo11.png" },
 ];
 
