@@ -1,4 +1,7 @@
+"use client";
+
 import { heroLogos } from "@/app/(ComingSoon)/data/landing";
+import { useMarquee } from "@/lib/hooks/useMarquee";
 
 /**
  * The landing hero's client-logo strip: one row scrolling left, forever.
@@ -13,11 +16,15 @@ import { heroLogos } from "@/app/(ComingSoon)/data/landing";
  * there.
  *
  * The list is rendered twice and the track translates by exactly -50%
- * (`.animate-logo-marquee`), so the second copy is under the cursor at the
- * moment the first one leaves and the loop has no seam. That equality is why
- * the spacing is a right *margin on every item* rather than a flex `gap`: a
- * gap sits only *between* items, so the track would be one gap short of two
+ * (`useMarquee`), so the second copy is under the cursor at the moment the
+ * first one leaves and the loop has no seam. That equality is why the
+ * spacing is a right *margin on every item* rather than a flex `gap`: a gap
+ * sits only *between* items, so the track would be one gap short of two
  * whole periods and -50% would land slightly off, jumping every lap.
+ *
+ * The movement is a GSAP tween rather than a CSS animation on purpose — a
+ * CSS-animated track this wide goes blank on iPhone; `useMarquee` has the
+ * whole story.
  *
  * The mask fades both ends to transparent rather than painting a white
  * gradient over them — the hero's background is a video behind two scrims,
@@ -27,13 +34,23 @@ import { heroLogos } from "@/app/(ComingSoon)/data/landing";
 const FADE =
   "linear-gradient(90deg, transparent 0, black 10%, black 88%, transparent 100%)";
 
+/**
+ * A lap of the whole list, not a speed, so it has to be re-tuned whenever
+ * logos are added or removed — 11 logos at ~1300px a lap on a phone makes
+ * this about 46px/sec, which is a readable walking pace. Halve the list and
+ * this same 28s would crawl.
+ */
+const LAP_SECONDS = 28;
+
 export default function LogoCarousel({ className = "" }: { className?: string }) {
+  const trackRef = useMarquee<HTMLDivElement>(LAP_SECONDS);
+
   return (
     <div
       className={`overflow-hidden ${className}`}
       style={{ maskImage: FADE, WebkitMaskImage: FADE }}
     >
-      <div className="animate-logo-marquee flex w-max items-center">
+      <div ref={trackRef} className="flex w-max items-center">
         {[...heroLogos, ...heroLogos].map((logo, i) => {
           const isDuplicate = i >= heroLogos.length;
 

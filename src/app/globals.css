@@ -231,27 +231,6 @@
   animation: marquee 16s linear infinite;
 }
 
-/* The landing hero's client-logo strip. Its own class rather than
-   `.animate-marquee` so it can run at its own pace and stop under
-   `prefers-reduced-motion` without changing the Design DNA strip that class
-   already drives. Same `marquee` keyframes: see
-   `(ComingSoon)/components/LogoCarousel.tsx` for why -50% is exactly one
-   period there.
-
-   The duration is a lap of the whole list, not a speed, so it has to be
-   re-tuned whenever logos are added or removed — 11 logos at ~1170px a lap
-   makes this about 42px/sec, which is a readable walking pace. Halve the
-   list and this same 28s would crawl. */
-.animate-logo-marquee {
-  animation: marquee 28s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-logo-marquee {
-    animation: none;
-  }
-}
-
 /* Same loop as `.animate-marquee`, but pauses on hover — used by the About
    page's Gallery/Trusted-by strips so a visitor can actually look at a
    frame instead of it always drifting. */
