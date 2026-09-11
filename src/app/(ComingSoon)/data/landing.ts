@@ -7,15 +7,15 @@
 
 /**
  * A fixed instant, not a local-midnight calculation: every visitor worldwide
- * counts down to the same moment (midnight IST, 14 Sep 2026) and therefore
+ * counts down to the same moment (midnight IST, 18 Sep 2026) and therefore
  * sees the same number, and the value can't drift with the viewer's timezone.
  */
-export const LAUNCH_DATE = new Date("2026-09-14T00:00:00+05:30");
+export const LAUNCH_DATE = new Date("2026-09-18T00:00:00+05:30");
 
 /**
  * The same instant as a label, pinned to IST so the server and the client
  * print the identical string (a `toLocaleDateString()` in the viewer's zone
- * could roll it to the 13th west of Greenwich and fail hydration).
+ * could roll it to the 17th west of Greenwich and fail hydration).
  */
 export const launchDateLabel = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
@@ -118,15 +118,18 @@ export const heroRotatingWords = [HERO_FOCUS, ...services];
  * file's artwork fills its own box (no baked-in padding), or that mark will
  * look smaller than its neighbours at the same height.
  *
- * The marks are `.svg`, which is how the brand files were delivered — but
- * they are Figma exports, and a Figma export of a placed bitmap is a single
- * `<image>` of base64 PNG inside a `<pattern>`, not vector art. So they do
- * scale to any pixel density (the embedded bitmaps run up to 4096px wide
- * against a ~30px render, where the old PNGs were 40px tall and went soft on
- * a retina phone) while costing what a bitmap costs: ~3.3MB across the set,
- * against ~80KB for the `.png` copies still sitting beside them. If this
- * strip ever has to get lighter, the fix is to re-export each mark as a 2x
- * PNG, not to hand-optimise these.
+ * Every mark is `.svg`, but only one of them is really a vector. The other
+ * ten are Figma exports of a placed bitmap, which is a single `<image>` of
+ * base64 PNG inside a `<pattern>` — so they scale to any pixel density (the
+ * embedded bitmaps run up to 4096px wide against a ~30px render, where the
+ * old 40px-tall PNGs went soft on a retina phone) while still costing what
+ * a bitmap costs: ~3.3MB across those ten, against ~80KB for the `.png`
+ * copies still sitting beside them.
+ *
+ * `logo11.svg` is what the rest should look like: nine `<path>`s, no
+ * embedded raster, 5.6KB — smaller than its own PNG and sharp at every
+ * density. Re-exporting the others that way is the fix if this strip ever
+ * has to get lighter; hand-optimising the bitmap-bearing ones is not.
  */
 export const heroLogos: { name: string; src: string }[] = [
   { name: "Garuda Aerospace", src: "/logo%20carousel/logo1.svg" },
@@ -141,9 +144,8 @@ export const heroLogos: { name: string; src: string }[] = [
   { name: "Apothecon", src: "/logo%20carousel/logo8.svg" },
   { name: "Ratnaafin", src: "/logo%20carousel/logo9.svg" },
   { name: "Asian Cables", src: "/logo%20carousel/logo10.svg" },
-  // The one mark delivered without an `.svg`, so it stays on its PNG. Drop a
-  // `logo11.svg` in beside the others and this line can match them.
-  { name: "PhillipCapital", src: "/logo%20carousel/logo11.png" },
+  // The only true vector file of the set — see the note above.
+  { name: "PhillipCapital", src: "/logo%20carousel/logo11.svg" },
 ];
 
 export const topBar = {
