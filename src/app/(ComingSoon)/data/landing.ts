@@ -7,10 +7,10 @@
 
 /**
  * A fixed instant, not a local-midnight calculation: every visitor worldwide
- * counts down to the same moment (midnight IST, 18 Sep 2026) and therefore
+ * counts down to the same moment (midnight IST, 24 Sep 2026) and therefore
  * sees the same number, and the value can't drift with the viewer's timezone.
  */
-export const LAUNCH_DATE = new Date("2026-09-18T00:00:00+05:30");
+export const LAUNCH_DATE = new Date("2026-09-24T00:00:00+05:30");
 
 /**
  * The same instant as a label, pinned to IST so the server and the client

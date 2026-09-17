@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useSyncExternalStore } from "react";
-import { LAUNCH_DATE } from "@/app/(ComingSoon)/data/landing";
+import { LAUNCH_DATE, launchDateLabel } from "@/app/(ComingSoon)/data/landing";
 import { remainingSeconds, toUnits, type Units } from "@/lib/countdown";
 
 const LABELS: { key: keyof Units; label: string }[] = [
@@ -72,7 +72,7 @@ export default function Countdown({
 
   const label =
     units === null
-      ? "Counting down to launch on 14 September 2026."
+      ? `Counting down to launch on ${launchDateLabel}.`
       : `Launching in ${Number(units.days)} days, ${Number(units.hours)} hours, ${Number(units.minutes)} minutes and ${Number(units.seconds)} seconds.`;
 
   const digit = (key: keyof Units) => (units === null ? "--" : units[key]);
