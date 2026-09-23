@@ -19,6 +19,87 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * How long a server-rendered read may wait on the backend before it is given
+ * up on. Node's `fetch` has no timeout of its own: a backend that accepts the
+ * connection and then never answers (a sleeping instance waking up, a dropped
+ * packet, a request hung on the database) leaves the render awaiting a promise
+ * that never settles.
+ *
+ * That is fatal specifically at build time. Every route renders through the
+ * root layout, which reads Navigation, so one unanswered request stalls the
+ * whole page render — and `next build` gives a page only 60 seconds
+ * (`staticPageGenerationTimeout`) before it restarts static generation for
+ * that page, retries twice more, then fails the build. Capping the wait well
+ * under that budget turns an indefinite hang into a prompt rejection, which
+ * every public caller already handles by rendering its static fallback copy
+ * (root CLAUDE.md rule 5).
+ *
+ * Override with `API_FETCH_TIMEOUT_MS` where the backend is known to be slow
+ * to wake, but keep it comfortably below 60000 or the build is back to timing
+ * out.
+ */
+const DEFAULT_SERVER_FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * Build-time only. `next build` prerenders every static route in its own
+ * render, so a backend that is simply not answering costs one full timeout
+ * *per page* — with enough pages queued onto one worker that stacks back up
+ * towards the 60s-per-page budget the timeout exists to stay under. The first
+ * missed deadline trips this for the rest of the build process: each worker
+ * waits once, and every page after it falls back to static copy immediately.
+ *
+ * Deliberately never armed at runtime — a long-lived server has to keep
+ * trying a backend that may well recover between two requests.
+ */
+const IS_BUILD_PHASE = process.env.NEXT_PHASE === "phase-production-build";
+
+let backendTimedOutDuringBuild = false;
+
+function timeoutError(timeoutMs: number): ApiError {
+  return new ApiError(504, `The server did not respond within ${timeoutMs}ms.`);
+}
+
+function getServerFetchTimeoutMs(): number {
+  const configured = Number(process.env.API_FETCH_TIMEOUT_MS);
+
+  return Number.isFinite(configured) && configured > 0
+    ? configured
+    : DEFAULT_SERVER_FETCH_TIMEOUT_MS;
+}
+
+/**
+ * Runs the request under an abort deadline and reports a breach as an
+ * ordinary `ApiError`, so callers keep the single error type they already
+ * branch on instead of having to recognise a bare `TimeoutError`. A caller
+ * that brought its own `signal` keeps it — its deadline wins over this one.
+ *
+ * Next strips the signal from its own background revalidation of a cached
+ * fetch, so this does not interfere with `next: { revalidate }` caching.
+ */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit
+): Promise<Response> {
+  if (init.signal) return fetch(url, init);
+
+  const timeoutMs = getServerFetchTimeoutMs();
+
+  if (backendTimedOutDuringBuild) throw timeoutError(timeoutMs);
+
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      if (IS_BUILD_PHASE) backendTimedOutDuringBuild = true;
+
+      throw timeoutError(timeoutMs);
+    }
+
+    throw error;
+  }
+}
+
 type ApiEnvelope<T> = {
   message: string;
   data?: T;
@@ -131,7 +212,7 @@ export async function serverApiFetch<T>(
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
+  const res = await fetchWithTimeout(`${getApiBaseUrl()}${path}`, {
     ...init,
     cache: init.cache ?? "no-store",
     headers: {
@@ -163,7 +244,7 @@ export async function serverPublicFetch<T>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
+  const res = await fetchWithTimeout(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers: buildHeaders(init),
   });
