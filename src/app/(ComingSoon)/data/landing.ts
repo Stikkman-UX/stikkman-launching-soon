@@ -10,7 +10,7 @@
  * counts down to the same moment (midnight IST, 7 Oct 2026) and therefore
  * sees the same number, and the value can't drift with the viewer's timezone.
  */
-export const LAUNCH_DATE = new Date("2026-10-07T00:00:00+05:30");
+export const LAUNCH_DATE = new Date("2026-10-13T00:00:00+05:30");
 
 /**
  * The same instant as a label, pinned to IST so the server and the client
