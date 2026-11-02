@@ -143,7 +143,7 @@ export const heroLogos: { name: string; src: string }[] = [
   { name: "Bharat Parenterals Limited", src: "/logo%20carousel/logo7.svg" },
   { name: "Apothecon", src: "/logo%20carousel/logo8.svg" },
   { name: "Ratnaafin", src: "/logo%20carousel/logo9.svg" },
-  { name: "Asian Cables", src: "/logo%20carousel/logo10.svg" },
+  // { name: "Asian Cables", src: "/logo%20carousel/logo10.svg" },
   // The only true vector file of the set — see the note above.
   { name: "PhillipCapital", src: "/logo%20carousel/logo11.svg" },
 ];

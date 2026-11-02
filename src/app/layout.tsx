@@ -94,7 +94,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const content = await resolveNavigationContent();
+  // const content = await resolveNavigationContent();
 
   return (
     <html
@@ -139,19 +139,11 @@ export default async function RootLayout({
               these links point at pages that only exist there. Social links
               are external and pass through untouched. */}
           <Header
-            topBarLinks={resolveNavHrefs(
-              pickList(content.topBarLinks?.items, topBarLinksFallback)
-            )}
-            menuLinks={resolveNavHrefs(
-              pickList(content.menuLinks?.items, menuLinksFallback)
-            )}
-            sectorsDropdown={resolveNavHrefs(
-              pickList(content.sectorsDropdown?.items, sectorsDropdownFallback)
-            )}
-            servicesDropdown={resolveNavHrefs(
-              pickList(content.servicesDropdown?.items, servicesDropdownFallback)
-            )}
-            socialLinks={pickList(content.socialLinks?.items, socialLinksFallback)}
+            topBarLinks={topBarLinksFallback}
+            menuLinks={menuLinksFallback}
+            sectorsDropdown={sectorsDropdownFallback}
+            servicesDropdown={servicesDropdownFallback}
+            socialLinks={socialLinksFallback}
           />
           <ContactCtaListener />
           <OpticalAlignProvider />
